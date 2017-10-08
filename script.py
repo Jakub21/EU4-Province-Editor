@@ -1,21 +1,33 @@
 import gamefiles
 import pandas as pd
 import codecs, sys, os
+from platform import system as psys
 
 
 ################################
 # SESSION INIT / ERRORS HANDLING / HELP DISPLAY
 ################################
 def init_session():
-    pd.set_option('display.max_rows', 2800) #default PowerShell buffer size is 3K
+    pd.set_option('display.max_rows', 2800)
+    #default buffer size in programs:
+        #PowerShell : 3000
+        #CMD        : 9001
     pd.set_option('display.max_columns', 50)
     pd.set_option('display.width', 1000)
     global error_prefix
     global input_prefix
     global legal_nonexit_calls
     global legal_exit_calls
-    error_prefix = '\n[Error] '
-    input_prefix = '\n[Editor] > '
+    global line_before_calls
+    global legal_settingnames
+    global program_header
+    line_before_calls = False
+    program_header = 'EU4 Province Editor version 0.1.0'
+    error_prefix = '(Error) '
+    input_prefix = '[Editor] > '
+    if line_before_calls:
+        error_prefix = '\n' + error_prefix
+        input_prefix = '\n' + input_prefix
     legal_nonexit_calls = [
         'load',
         'save',
@@ -33,30 +45,34 @@ def init_session():
         'print',
         'clear', #clear screen
         'help',
+        #'settings', #
     ]
     legal_exit_calls = [
-        'exit',
-        'quit',
+        'exit', 'quit', 'leave',
     ]
     return
 
 
-def raise_error(error_type, content='', fatal=False):
+def raise_error(error_type, fatal=False):
     print(error_prefix, end = "") #PREFIX
     if error_type == 'illegal_call':
-        print('Unrecognized function: "'+content+'"')
+        print('Unrecognized function')
     if error_type == 'unknown_subcall': #FuncAttr
         print('Unrecognized parameter for called function')
     if error_type == 'too_many_arguments':
         print('Function recieved too many arguments')
+    if error_type == 'too_less_arguments':
+        print('Function recieved not enough arguments')
     if error_type == 'data_not_loaded':
         print('Can not execute this function. Data not found')
     if error_type == 'data_not_selected':
-        print('Can not execute this function. No data was selected')
+        print('Can not execute this function. Selection not found')
     if error_type == 'unknown_attribute': #DataAttr
-        print('Unknown attribute "'+content+'". Use legal column names')
+        print('Unknown province attribute. Use legal column names')
     if error_type == 'filestream_error':
         print('Selected file does not exist or the permission was denied')
+    if error_type == 'encoding_bom_error':
+        print('Loaded file uses encoding with BOM and can not be loaded')
 
     if fatal:
         print("Program Terminated")
@@ -83,7 +99,7 @@ def show_usage(funcname): #TODO: Messages should be re-written
     if funcname in [None, 'apply']:
         print('-'*32)
         print("APPLY")
-        print(i, "Copy data from selected scope to AllData")
+        print(i, "Copy data from selection to AllData")
     if funcname in [None, 'select']:
         print('-'*32)
         print("SELECT")
@@ -120,12 +136,12 @@ def show_usage(funcname): #TODO: Messages should be re-written
     if funcname in [None, 'set']:
         print('-'*32)
         print("SET")
-        print(i, "In selected provinces set [attribute] with [value]")
+        print(i, "In selection set [attribute] with [value]")
         print(i, "SET [attribute] [value]")
     if funcname in [None, 'replace']:
         print('-'*32)
         print("REPLACE")
-        print(i, "In selected provinces, where [attribute] is [oldvalue], set [attribute] to [newvalue]")
+        print(i, "In selection, where [attribute] is [oldvalue], set [attribute] to [newvalue]")
         print(i, "SET [attribute] [oldvalue] [newvalue]")
     if funcname in [None, 'inprov']:
         print('-'*32)
@@ -135,7 +151,7 @@ def show_usage(funcname): #TODO: Messages should be re-written
     if funcname in [None, 'print']:
         print('-'*32)
         print("PRINT")
-        print(i, "Show selected data on screen. Use ['all'] to show all data")
+        print(i, "Show selection on screen. Use ['all'] to show all data")
         print(i, "PRINT ?['all']")
     if funcname in [None, 'clear']:
         print('-'*32)
@@ -146,6 +162,10 @@ def show_usage(funcname): #TODO: Messages should be re-written
         print("HELP")
         print(i, "Display this message. Specify funcname to only show help for this function")
         print(i, "HELP ?[funcname]")
+    if funcname == None:
+        print('-'*32)
+        print("EXIT")
+        print(i, "Those will exit program: \""+ '", "'.join(legal_exit_calls)+'"')
 
 ################################
 # FILES MANIPULATION
@@ -164,29 +184,7 @@ def load(ltype, location, depth):
         except (FileNotFoundError, PermissionError):
             raise_error('filestream_error')
         except UnicodeDecodeError:
-            ################
-            BUFSIZE = 4096
-            BOMLEN = len(codecs.BOM_UTF8)
-            with open(location, "r+b") as fp:
-                chunk = fp.read(BUFSIZE)
-                if chunk.startswith(codecs.BOM_UTF8):
-                    i = 0
-                    chunk = chunk[BOMLEN:]
-                    while chunk:
-                        fp.seek(i)
-                        fp.write(chunk)
-                        i += len(chunk)
-                        fp.seek(BOMLEN, os.SEEK_CUR)
-                        chunk = fp.read(BUFSIZE)
-                    fp.seek(-BOMLEN, os.SEEK_CUR)
-                    fp.truncate()
-            #with open(location, "r") as fp:
-            #    return fp.read()
-            ################
-            if depth < 3:
-                load(ltype, location, depth+1)
-            else:
-                raise
+            raise_error('encoding_bom_error')
     if ltype == 'game':
         try:
             return gamefiles.load(location)
@@ -194,15 +192,15 @@ def load(ltype, location, depth):
             raise_error('filestream_error')
 
 ################################
-def save(ltype, location):
+def save(ltype, data, location):
     if ltype == 'sheet':
-        try:
-            return pd.to_csv(location)
-        except:
-            print("ERROR:Script:Save (Sheet)")
+        #try:
+        return data.to_csv(location)
+        #except:
+        #    print("ERROR:Script:Save (Sheet)")
     if ltype == 'game':
         try:
-            return gamefiles.save(location)
+            return gamefiles.save(data, location)
         except:
             print("ERROR:Script:Save (Game)")
 
@@ -212,40 +210,68 @@ def save(ltype, location):
 ################################
 def interactive():
     '''Analysis of input. Calls relevant functions.'''
-    cont = True
     prefixes = { #PrefixName : RequiredWordsCount (include prefix itself)
         'where'     : 3,
         'wherenot'  : 3,
         'onlyprint' : 1,
     }
     data = None
-    selected = None
-    while cont:
+    selection = None
+    while True:
         call = input(input_prefix).split()
 
         if len(call) == 0:
-            continue
+            continue #Empty input
 
         funcname = call[0]
 
         if funcname in legal_exit_calls:
-            cont = False
             break
 
         if funcname not in legal_nonexit_calls:
             raise_error('illegal_call', funcname)
 
         ################################
-        # INTERACTIVE FUNCTIONS
+        # ARGUMENTS AND SUB-CALLS PARSING
         ################################
 
-        if funcname == 'load':
+        if funcname in ['load', 'save']: #Filestream
             try:
                 subcall = call[1]
                 directory = call[2]
             except:
-                show_usage('load')
+                show_usage(funcname)
                 continue
+
+        if funcname in ['apply']: #No arguments needed
+            try:
+                subcall = call[1]
+                raise_error('too_many_arguments')
+                continue
+            except:
+                pass
+
+        if funcname in ['select', 'subselect', 'append', 'deselect', 'set']: #Attribute and Value
+            try:
+                attribute = call[1]
+                values = call[2:]
+            except:
+                show_usage(funcname)
+                continue
+            if type(values) != list:
+                try:
+                    values = [values]
+                except KeyError:
+                    continue
+                    #TODO: Explain: When using unknown attr pandas says there's error
+                    #NOTE: Copy of this is in interactive > print > mode : where/only
+
+
+        ################################
+        # INTERACTIVE FUNCTIONS
+        ################################
+
+        if funcname == 'load':
             if subcall not in ['sheet', 'game']:
                 raise_error('unknown_subcall')
                 continue
@@ -253,105 +279,43 @@ def interactive():
 
 
         if funcname == 'save':
-            try:
-                subcall = call[1]
-                directory = call[2]
-            except:
-                show_usage('save')
-                continue
             if subcall not in ['sheet', 'game']:
                 raise_error('unknown_subcall')
                 continue
-            data = save(subcall, directory)
+            data = save(subcall, data, directory)
 
 
         if funcname == 'apply':
             try:
-                subcall = call[1]
-                raise_error('too_many_arguments')
-                continue
-            except:
-                pass
-            if data == None: #Data is not loaded
-                raise_error('data_not_loaded', 'apply')
-            data.update(selected)
+                data.update(selection)
+            except: #No possible errors found so far
+                raise
 
 
-        if funcname == 'select':
+        if funcname in ['select', 'subselect']:
             try:
-                attribute = call[1]
-                values = call[2:]
-            except:
-                show_usage(funcname)
-                continue
-            if type(values) != list:
-                try:
-                    values = [values]
-                except KeyError:
-                    continue #TODO: Explain: When using unknown attr pandas says theres key error
-            try:
-                selected = data.loc[data[attribute].isin(values)]
+                if funcname == 'select':
+                    selection = data.loc[data[attribute].isin(values)]
+                if funcname == 'subselect':
+                    selection = selection.loc[data[attribute].isin(values)]
             except (AttributeError, TypeError):
                 raise_error('data_not_loaded')
             except KeyError:
-                raise_error('unknown_attribute', attribute)
-
-
-        if funcname == 'subselect':
-            try:
-                attribute = call[1]
-                values = call[2:]
-            except:
-                show_usage(funcname)
-                continue
-            if type(values) != list:
-                try:
-                    values = [values]
-                except KeyError:
-                    continue #TODO: Explain: Same as above
-            try:
-                selected = selected.loc[data[attribute].isin(values)]
-            except (AttributeError, TypeError):
-                raise_error('data_not_loaded')
-            except KeyError:
-                raise_error('unknown_attribute', attribute)
+                raise_error('unknown_attribute')
 
 
         if funcname == 'append':
             try:
-                attribute = call[1]
-                values = call[2:]
-            except:
-                show_usage(funcname)
-                continue
-            if type(values) != list:
-                try:
-                    values = [values]
-                except KeyError:
-                    continue #TODO: Explain: Same as above
-            try:
-                newselect = data.loc[data[attribute].isin(values)]
-                newselect.update(selected)
-                selected = newselect
+                newsel = data.loc[data[attribute].isin(values)]
+                selection = pd.concat([selection, newsel])
             except (AttributeError, TypeError):
                 raise_error('data_not_loaded')
             except KeyError:
-                raise_error('unknown_attribute', attribute)
+                raise_error('unknown_attribute')
 
 
         if funcname == 'deselect':
-            try:
-                attribute = call[1]
-                values = call[2:]
-            except:
-                show_usage(funcname)
-                continue
-            try:
-                data = data[~data[attribute].isin(values)] # ~ negation
-            except (AttributeError, TypeError):
-                raise_error('data_not_loaded')
-            except KeyError:
-                raise_error('unknown_attribute', attribute)
+            pass #TODO
 
 
         if funcname == 'sort':
@@ -359,68 +323,97 @@ def interactive():
                 scope = call[1]
                 attrlist = call[2:]
             except:
-                show_usage(funcname)
+                raise_error('too_less_arguments')
                 continue
+            if attrlist == ['location']: #TEMP - Only works with CSV used for tests
+                attrlist = ['segion', 'region', 'area']
             if scope == 'all':
                 data.sort_values(attrlist, inplace = True)
             elif scope == 'selection':
-                selected.sort_values(attrlist, inplace = True)
+                selection.sort_values(attrlist, inplace = True)
             else: raise_error('unknown_subcall')
 
 
         if funcname == 'set':
-            try:
-                attribute = call[1]
-                value = call[2]
-            except:
-                show_usage(funcname)
-                continue
-            #data[attribute] = value #TODO
+            selection.loc[:, attribute] = [values][0] #Somewhat works
 
 
-        if funcname == 'replace':
+        if funcname == 'replace': #Separate argument parser
             try:
                 oldvalue = call[1]
                 newvalue = call[2]
             except:
                 show_usage(funcname)
                 continue
-            data.replace(oldvalue, newvalue, inplace = True)
-            #TODO: No info about which column should be affected
+            selection.replace(oldvalue, newvalue, inplace = True)
+            #TODO: Pandas Function takes no arg
+                #specifying which column should be affected
 
 
-        if funcname == 'inprov':
+        if funcname == 'inprov': #Separate argument parser
             try:
-                provid = call[1]
+                provid = int(call[1])
                 attribute = call[2]
-                value = call[3]
+                values = call[3]
             except:
                 show_usage(funcname)
                 continue
-            data.set_value(provid, attribute, value) #TODO: Is it in-place?
+            #data.set_value(provid, attribute, value) #TODO: Is it in-place?
+            selection.loc[provid, attribute] = [values][0]
 
 
-        if funcname == 'print':
+        if funcname == 'print': #Separate argument parser
             mode = None
+            printwhere_has_args = False
             try:
                 mode = call[1]
+                try:
+                    attribute = call[2]
+                    values = call[3]
+                    printwhere_has_args = True
+                except: pass #Only required if mode is 'where'
             except: pass #Argument is optional
             if mode == None:
-                print(selected)
+                print(selection)
             elif mode == 'all':
                 print(data)
+            elif mode in ['where', 'only']:
+                if not printwhere_has_args:
+                    raise_error('too_less_arguments')
+                try:
+                    if type(values) != list:
+                        try:
+                            values = [values]
+                        except KeyError:
+                            continue #NOTE
+                    if mode == 'where':
+                        psel = data.loc[data[attribute].isin(values)]
+                    if mode == 'only':
+                        psel = selection.loc[data[attribute].isin(values)]
+                    print(psel)
+                except (AttributeError, TypeError):
+                    raise_error('data_not_loaded')
+                    continue
+                except KeyError:
+                    raise_error('unknown_attribute', attribute)
+                    continue
             else:
                 raise_error('unknown_subcall')
 
 
         if funcname == 'clear':
-            os.system('cls')
+            if psys() == 'Windows':
+                os.system('cls')
+            else:
+                os.system('clear')
+            print(program_header)
+
 
         if funcname == 'help':
             funcname = None
             try:
                 funcname = call[1].lower()
-            except: pass
+            except: pass #Argument is optional
             show_usage(funcname)
 
 
@@ -430,8 +423,8 @@ def interactive():
 ################################
 
 def main():
-    print('EU4 Province Editor  |  Jakub21  |  October 2017')
     init_session()
+    print(program_header)
     interactive()
 
 
