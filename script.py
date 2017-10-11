@@ -9,25 +9,17 @@ from platform import system as psys
 ################################
 def init_session():
     pd.set_option('display.max_rows', 2800)
-    #default buffer size in programs:
-        #PowerShell : 3000
-        #CMD        : 9001
     pd.set_option('display.max_columns', 50)
     pd.set_option('display.width', 1000)
     global error_prefix
-    global input_prefix
-    global legal_nonexit_calls
-    global legal_exit_calls
-    global line_before_calls
-    global legal_settingnames
-    global program_header
-    line_before_calls = False
-    program_header = 'EU4 Province Editor version 0.1.0'
     error_prefix = '(Error) '
+    global input_prefix
     input_prefix = '[Editor] > '
-    if line_before_calls:
-        error_prefix = '\n' + error_prefix
-        input_prefix = '\n' + input_prefix
+    global line_before_calls
+    line_before_calls = False
+    global program_header
+    program_header = 'EU4 Province Editor version 0.1.0'
+    global legal_nonexit_calls
     legal_nonexit_calls = [
         'load',
         'save',
@@ -45,11 +37,14 @@ def init_session():
         'print',
         'clear', #clear screen
         'help',
-        #'settings', #
     ]
+    global legal_exit_calls
     legal_exit_calls = [
         'exit', 'quit', 'leave',
     ]
+    if line_before_calls:
+        error_prefix = '\n' + error_prefix
+        input_prefix = '\n' + input_prefix
     return
 
 
@@ -71,6 +66,8 @@ def raise_error(error_type, fatal=False):
         print('Unknown province attribute. Use legal column names')
     if error_type == 'filestream_error':
         print('Selected file does not exist or the permission was denied')
+    if error_type == 'unknown_fstr_error':
+        print('Unknown error occured when loading selected file.')
     if error_type == 'encoding_bom_error':
         print('Loaded file uses encoding with BOM and can not be loaded')
 
@@ -79,7 +76,7 @@ def raise_error(error_type, fatal=False):
         exit(1)
 
 
-def show_usage(funcname): #TODO: Messages should be re-written
+def show_usage(funcname):
     i = " "*4
     if funcname == None:
         print('-'*32)
@@ -90,7 +87,7 @@ def show_usage(funcname): #TODO: Messages should be re-written
         print('-'*32)
         print("LOAD")
         print(i, "LOAD ['sheet'/'game'] [directory]")
-        print(i, "Load data from external source (Called AllData from now on)")
+        print(i, "Load data from external source (AllData)")
     if funcname in [None, 'save']:
         print('-'*32)
         print("SAVE")
@@ -99,16 +96,16 @@ def show_usage(funcname): #TODO: Messages should be re-written
     if funcname in [None, 'apply']:
         print('-'*32)
         print("APPLY")
-        print(i, "Copy data from selection to AllData")
+        print(i, "Copy data from selection to AllData. Changing selection without applying reverts changes.")
     if funcname in [None, 'select']:
         print('-'*32)
         print("SELECT")
-        print(i, "Select provinces in which [attribute] is [value]. Uses AllData as source")
+        print(i, "Select provinces (from AllData) in which [attribute] is [value]")
         print(i, "SELECT [attribute] [value]")
     if funcname in [None, 'subselect']:
         print('-'*32)
         print("SUBSELECT")
-        print(i, "Same as 'select' but use current selection as source")
+        print(i, "Select provinces (from current selection) in which [attribute] is [value]")
         print(i, "SUBSELECT [attribute] [value]")
     if funcname in [None, 'append']:
         print('-'*32)
@@ -120,89 +117,86 @@ def show_usage(funcname): #TODO: Messages should be re-written
         print("DESELECT")
         print(i, "From current selection remove provinces where [attribute] is [value]")
         print(i, "DESELECT [attribute] [value]")
-    if funcname in [None, 'where']:
-        print('-'*32)
-        print("WHERE")
-        print(i, "Unused")
-    if funcname in [None, 'wherenot']:
-        print('-'*32)
-        print("WHERENOT")
-        print(i, "Unused")
     if funcname in [None, 'sort']:
         print('-'*32)
         print("SORT")
-        print(i, "Sort [data] by [attributes]")
+        print(i, "Sort chosen data (AllData or Selection) by [attributes]")
         print(i, "SORT ['all'/'selection'] [attributes(lists allowed)]")
     if funcname in [None, 'set']:
         print('-'*32)
         print("SET")
-        print(i, "In selection set [attribute] with [value]")
+        print(i, "In whole selection set [attribute] with [value]")
         print(i, "SET [attribute] [value]")
     if funcname in [None, 'replace']:
         print('-'*32)
         print("REPLACE")
-        print(i, "In selection, where [attribute] is [oldvalue], set [attribute] to [newvalue]")
-        print(i, "SET [attribute] [oldvalue] [newvalue]")
+        print(i, "In selection, where [attribute] is [old_value], set [attribute] to [new_value]")
+        print(i, "REPLACE [attribute] [old_value] [new_value]")
+        print(i, "NOTE: This is how the function should work. Below is how to call the temporary version.")
+        print(i, "Replacing values only in selected column is not possible yet")
+        print(i, "REPLACE [old_value] [new_value]")
     if funcname in [None, 'inprov']:
         print('-'*32)
         print("INPROV")
-        print(i, "In province with id [provID] set [attribute] as [value]")
-        print(i, "INPROV [provID] [attribute] [value]")
+        print(i, "In province with id [prov_id] set [attribute] to [value]")
+        print(i, "INPROV [prov_id] [attribute] [value]")
     if funcname in [None, 'print']:
         print('-'*32)
-        print("PRINT")
-        print(i, "Show selection on screen. Use ['all'] to show all data")
-        print(i, "PRINT ?['all']")
+        print("PRINT") #TODO
+        print(i, "Show data on screen. Default scope is Selection but ['all'] can be used to show AllData")
+        print(i, "PRINT ['all']")
+        print(i, "Selective print can be chosen by using:")
+        print(i, "PRINT ['where'/'only'] [attribute] [value]; Scope:('where' - AllData; 'only' - Selection)")
     if funcname in [None, 'clear']:
         print('-'*32)
         print("CLEAR")
-        print(i, "Clear terminal")
+        print(i, "Clear terminal. Does not affect any data.")
     if funcname in [None, 'help']:
         print('-'*32)
         print("HELP")
-        print(i, "Display this message. Specify funcname to only show help for this function")
-        print(i, "HELP ?[funcname]")
+        print(i, "Display this message. Specify funcname to only show help for single function")
+        print(i, "HELP [funcname(optional)]")
     if funcname == None:
         print('-'*32)
         print("EXIT")
-        print(i, "Those will exit program: \""+ '", "'.join(legal_exit_calls)+'"')
+        print(i, "Valid commands that close program: \""+ '", "'.join(legal_exit_calls)+'"')
+
 
 ################################
 # FILES MANIPULATION
 ################################
 def load(ltype, location, depth):
-    encoding = 'utf-8'
+    encodings = ['utf-8', 'utf-8-sig']
     if ltype == 'sheet':
-        try:
-            data = pd.read_csv(location, encoding = encoding)
-            for q in ['id', 'ProvID']:
-                try:
-                    data.set_index(q, inplace=True)
-                    break
-                except: pass
-            return data
-        except (FileNotFoundError, PermissionError):
-            raise_error('filestream_error')
-        except UnicodeDecodeError:
-            raise_error('encoding_bom_error')
+        for encoding in encodings:
+            try:
+                data = pd.read_csv(location, encoding = encoding)
+                for q in ['id', 'ProvID']:
+                    try:
+                        data.set_index(q, inplace=True)
+                        break
+                    except: pass
+                return data
+            except (FileNotFoundError, PermissionError):
+                raise_error('filestream_error')
+                break # No encoding will open this file if this happens
+            except UnicodeDecodeError:
+                pass # Intended
     if ltype == 'game':
         try:
             return gamefiles.load(location)
         except (FileNotFoundError, PermissionError):
             raise_error('filestream_error')
 
-################################
 def save(ltype, data, location):
     if ltype == 'sheet':
-        #try:
-        return data.to_csv(location)
-        #except:
-        #    print("ERROR:Script:Save (Sheet)")
+        data.to_csv(location, encoding = 'utf-8-sig')
     if ltype == 'game':
         try:
             return gamefiles.save(data, location)
         except:
-            print("ERROR:Script:Save (Game)")
+            print("ERROR: Unhandled error occured in Main when tried to call 'gamefiles.save()'")
+            raise
 
 
 ################################
@@ -210,29 +204,20 @@ def save(ltype, data, location):
 ################################
 def interactive():
     '''Analysis of input. Calls relevant functions.'''
-    prefixes = { #PrefixName : RequiredWordsCount (include prefix itself)
-        'where'     : 3,
-        'wherenot'  : 3,
-        'onlyprint' : 1,
-    }
-    data = None
+    data = None #VarName Declaration
     selection = None
     while True:
         call = input(input_prefix).split()
-
         if len(call) == 0:
             continue #Empty input
-
         funcname = call[0]
-
         if funcname in legal_exit_calls:
             break
-
         if funcname not in legal_nonexit_calls:
             raise_error('illegal_call', funcname)
 
         ################################
-        # ARGUMENTS AND SUB-CALLS PARSING
+        # SUB-CALLS AND ARGUMENTS PARSING
         ################################
 
         if funcname in ['load', 'save']: #Filestream
@@ -286,10 +271,7 @@ def interactive():
 
 
         if funcname == 'apply':
-            try:
-                data.update(selection)
-            except: #No possible errors found so far
-                raise
+            data.update(selection) #No possible errors found so far
 
 
         if funcname in ['select', 'subselect']:
@@ -315,6 +297,7 @@ def interactive():
 
 
         if funcname == 'deselect':
+            print("(SCRIPT) Function is not done yet and has no effect.")
             pass #TODO
 
 
@@ -335,7 +318,7 @@ def interactive():
 
 
         if funcname == 'set':
-            selection.loc[:, attribute] = [values][0] #Somewhat works
+            selection.loc[:, attribute] = [values][0]
 
 
         if funcname == 'replace': #Separate argument parser
@@ -346,8 +329,7 @@ def interactive():
                 show_usage(funcname)
                 continue
             selection.replace(oldvalue, newvalue, inplace = True)
-            #TODO: Pandas Function takes no arg
-                #specifying which column should be affected
+            #TODO: Pandas Function takes no arg specifying which column should be affected
 
 
         if funcname == 'inprov': #Separate argument parser
@@ -358,8 +340,8 @@ def interactive():
             except:
                 show_usage(funcname)
                 continue
-            #data.set_value(provid, attribute, value) #TODO: Is it in-place?
             selection.loc[provid, attribute] = [values][0]
+            #NOTE: Pandas message about indexing and copying is displayed
 
 
         if funcname == 'print': #Separate argument parser
@@ -371,7 +353,7 @@ def interactive():
                     attribute = call[2]
                     values = call[3]
                     printwhere_has_args = True
-                except: pass #Only required if mode is 'where'
+                except: pass #Only required if mode is 'where' or 'only'
             except: pass #Argument is optional
             if mode == None:
                 print(selection)
@@ -395,7 +377,7 @@ def interactive():
                     raise_error('data_not_loaded')
                     continue
                 except KeyError:
-                    raise_error('unknown_attribute', attribute)
+                    raise_error('unknown_attribute')
                     continue
             else:
                 raise_error('unknown_subcall')
@@ -410,11 +392,16 @@ def interactive():
 
 
         if funcname == 'help':
-            funcname = None
+            chosen = None
             try:
-                funcname = call[1].lower()
+                chosen = call[1].lower()
+                try:
+                    call[2] # There should be max 1 arg
+                    raise_error('too_many_arguments')
+                    continue
+                except: pass # There should be max 1 arg
             except: pass #Argument is optional
-            show_usage(funcname)
+            show_usage(chosen)
 
 
 
@@ -432,8 +419,8 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n"+ "-"*32 + "\nProgram manually terminated\n\n")
+        print("\n\n"+ "-"*32 + "\nProgram manually terminated\n"+ "-"*32+"\n\n")
     except Exception as e: #Any Unhandled Error
         print("\n"+ "-"*32 + "\nUnhandled error occured: "
-        + str(type(e)) + "\n" + "-"*32+"\n\n")
+        + str(type(e).__name__) + "\n" + "-"*32+"\n\n")
         raise

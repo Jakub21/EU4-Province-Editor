@@ -6,7 +6,7 @@ import matplotlib
 
 #Nothing is yet ready
 
-def load():
-    return
-def save():
-    return
+def load(arg1):
+    print('Function is not available.')
+def save(arg1, arg2):
+    print('Function is not available.')

@@ -2,25 +2,37 @@
 **Province History Editor for Europa Universalis IV**
 
 Written by Jakub21
+
 October 2017
+
 Published and Developed on GitHub
+
 
 ***Requirements***
 
 - Python 3
 - Pandas v0.20
-- Terminal with modifiable screen width
 
-***Notes***
+***TODOs***
 
-- Game files can not be yet loaded
+- Loader for game files
+- Solve problems that cause display of Pandas' warning message during usage of functions:
+    'sort', 'inprov', 'replace'
+- Allow user to change which (and how many) columns and rows should be displayed
 
 
 
+# Changelog
 
-# CHANGELOG
+***Version 0.1***
 
-***0.1.0***
+**Initial' Repair II**
+
+- Using unknown attribute in 'print' function with mode 'only' is longer considered fatal error
+- Solved problems with loading CSV sheets encoded with UTF-8 BOM
+- Default encoding when saving CSV sheets is now UTF-8 BOM (Spreadsheet programs default)
+- Changed usage / help messages
+
 
 **Initial' Repair I**
 
@@ -31,8 +43,9 @@ Published and Developed on GitHub
 - Function 'clear' is now cross-platform
 - Added more options for 'print'
 
+
 **Initial Commit**
 
-Initial version of program.
+- Initial version of program.
 - Lacks basic features and contains bany bugs.
 - Files can not be loaded from GameFiles
