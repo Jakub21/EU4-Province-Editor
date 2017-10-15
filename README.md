@@ -11,7 +11,9 @@ Published and Developed on GitHub
 ***Requirements***
 
 - Python 3
-- Pandas v0.20
+- Pandas package (v0.20)
+- PyYAML package (v3.12)
+
 
 ***TODOs***
 
@@ -19,6 +21,9 @@ Published and Developed on GitHub
 - Solve problems that cause display of Pandas' warning message during usage of functions:
     'sort', 'inprov', 'replace'
 - Allow user to change which (and how many) columns and rows should be displayed
+- General usage info in readme
+- 'gamefiles.py' imports 'script.py'. Is that correct?
+
 
 
 
@@ -26,7 +31,20 @@ Published and Developed on GitHub
 
 ***Version 0.1***
 
-**Initial' Repair II**
+**Game Files Parser I** (Last on Game-Files-Parser branch)
+
+Branch-Related
+- Recursive parser for history files
+- Using yaml package to load localisation
+- Parser for region files (Data is not ready for use until merge_regions() is done)
+
+Other Changes
+- Shortened error messages handling
+- Changes in init_session (global settings)
+- Help messages moved to script's docstr
+
+
+**Initial' Repair II** (Last on Master branch)
 
 - Using unknown attribute in 'print' function with mode 'only' is longer considered fatal error
 - Solved problems with loading CSV sheets encoded with UTF-8 BOM
