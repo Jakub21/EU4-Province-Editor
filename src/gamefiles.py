@@ -1,9 +1,8 @@
-from pandas import DataFrame#, read_csv, to_csv
+from src.meta import raise_error
+from pandas import DataFrame
 import pandas as pd
 from os import getcwd, listdir
-from platform import system as psys
 import yaml
-import script
 
 ################################
 # INITIALISE SESSION
@@ -43,36 +42,71 @@ def getregions(wordlist, memdepth):
         depth -= word.count("}")
         if word in "{=}colorareas":
             continue
-        #print(depth, '"'+word+'"', ' '*(25-len(word)), master)
         if depth == pardepth:
             result[master] = members
             master = word
             members = []
         if depth == memdepth:
             members.append(word)
-
-    #for key in result:
-    #    value = result[key]
-    #    print(key, ' '*(30-len(key)), value)
     return result
 
 ################################
 # CONVERT REGIONING DATA TO DICTIONARY (ProvID as key)
 def merge_regions(segions, regions, areas):
-    #print(regions)
-    pass
+    ################
+    def _find(search_key, scope):
+        for key in scope:
+            value = scope[key]
+            if search_key in value: # 'value' is list
+                return key
+    ################
+    result = {}
+    for area in areas:
+        region = _find(area, regions)
+        segion = _find(region, segions)
+        provlist = areas[area]
+        area_name = area
+        region_name = region
+        segion_name = segion
+        if settings['shorten_region_names']:
+            try:
+                if area_name.endswith('_area'):
+                    area_name = area_name[:-5]
+            except AttributeError: #None
+                area_name = 'none'
+            try:
+                if region_name.endswith('_region'):
+                    region_name = region_name[:-7]
+            except AttributeError: #None
+                area_name = 'none'
+            try:
+                if segion_name.endswith('_superregion'):
+                    segion_name = segion_name[:-12]
+            except AttributeError: #None
+                area_name = 'none'
+        for province in provlist:
+            result[province] = [area_name, region_name, segion_name]
+    return result
+
 
 ################################
 # RECURSIVE WORDLIST ANALYSIS (used in LOAD)
-def getscope(data):
+key_index = 1
+val_index = 0
+eqs_index = 2
+def getscope(data, r_depth = 0):
     depth = 0
-    index = 0
-    key = ('none '*4).split()
+    index = 1
+    total_index = 0
+    key = 'none'
     inquotes = False
+    quoted = ''
+    value = ''
     result = {}
     subscope = []
     for word in data:
-        first = False
+        #print(r_depth, index, depth, word, sep = '\t')
+        last = False
         if word == '{':
             depth += 1
         if word == '}':
@@ -85,24 +119,41 @@ def getscope(data):
                 subscope = []
         if word.count('"') == 1:
             inquotes = not inquotes
-            if inquotes:
-                first = True
-        if index == 0:
+            if not inquotes:
+                last = True
+            else:
+                quoted = ''
+        if inquotes:
+            quoted += word + ' '
+        if last:
+            quoted += word
+            value = quoted
+        if index == key_index:
             key = word
-        if index == 2:
-            value = word
+        if index == val_index:
+            if not last:
+                value = word
+            if inquotes:
+                continue
             if value == '}':
                 subscope = subscope[1:]
                 try: # NEXT RECURSION DEPTH
-                    result[key].append(getscope(subscope))
+                    result[key].append(getscope(subscope, r_depth+1))
                 except KeyError:
-                    result[key] = [getscope(subscope)]
+                    result[key] = [getscope(subscope, r_depth+1)]
+                except TypeError: # Move exception level up
+                    return Exception
             else:
                 try:
                     result[key].append(value)
                 except KeyError:
                     result[key] = [value]
+        if index == eqs_index:
+            if word != '=':
+                raise_error('hparser_equal_sign')
+                return Exception
         index = (index+1)%3
+        total_index += 1
     return result
 
 ################################
@@ -128,13 +179,23 @@ def getid(filename):
     return result
 
 ################################
+# REMOVE NUMBERS AFTER COLONS
+def prepare_yaml(data):
+    numbers = ''.join(map(lambda x: str(x), range(10)))
+    result = ''
+    prev = ''
+    for c in data:
+        if (prev == ':') and (c in numbers):
+            c = ''
+        result += c
+        prev = c
+    return result
+
+################################
 # MAIN GAME FILE LOAD PROCEDURE
 def load(location):
     cwd = getcwd()
-    if psys() == 'Windows':
-        sep = '\\'
-    else:
-        sep = '/'
+    sep = settings['dir_sep']
     histdir = cwd + sep + location + sep + settings['history_subdir'] + sep
     datadir = cwd + sep + location + sep
     ################################
@@ -145,19 +206,38 @@ def load(location):
     ################################
     localisation = {}
     with open(datadir + 'localisation.yml', 'r', encoding = 'utf-8-sig') as stream:
+        content = prepare_yaml(stream.read())
         try:
-            localisation = yaml.load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
+            rlcl = yaml.load(content) # Whole Yaml file loaded to dict
+        except yaml.YAMLError as e:
+            print(e)
+            return
+    for lang in settings['lcl_languages']:
+        try:
+            localisation = rlcl[lang]
+            break
+        except KeyError:
+            pass
     if localisation == {}:
-        script.raise_error('nolocalisation_error')
+        raise_error('nolocalisation_error')
+        return
     ################################
     rows = []
     for filename in listdir(histdir):
-        provid = getid(filename)
         fdir = histdir + filename
         data = getscope(getfile(fdir).split())
+        if type(data) == type: # TODO
+            return
         province = {}
+        provid = getid(filename)
+        if provid == '':
+            continue
+        province['id']          = provid
+        province['filename']    = filename
+        province['name']        = localisation['PROV'+provid]
+        province['area']        = regioning[provid][0]
+        province['region']      = regioning[provid][1]
+        province['segion']      = regioning[provid][2]
         for datakey in settings['historyfile_keys']:
             provkey = settings['historyfile_keys'][datakey]
             if type(provkey) == list:
@@ -166,29 +246,27 @@ def load(location):
                 keys = [provkey]
             try:
                 value = getvalue(keys, data)
-                #try:
-                #    value = list(map(lambda x: int(x), value))
-                #except ValueError:
-                #    pass
             except KeyError:
                 value = []
-            #print(datakey, ' '*(12-len(datakey)), value)
             province[datakey] = value
         ################################
         row = []
         for key in settings['column_order']:
-            if key == 'id':
-                row.append(provid)
-            elif key == 'filename':
-                row.append(filename)
+            value = province[key]
+            #print(value)
+            if type(value) == list:
+                row.append('&'.join(value))
             else:
-                row.append('&'.join(province[key]))
-                print(province[key])
-        #row = list(map(lambda x: str(x) (row)))
+                row.append(value)
         rows.append(row)
     ################################
-    #exit()
+    #for row in rows:
+    #    print('-'*64)
+    #    for el in row:
+    #        print('>"'+el+'"')
+    #    print('\n')
     df = DataFrame(rows, columns = settings['column_order'])
+    ################################
     return df
 
 

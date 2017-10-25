@@ -1,5 +1,6 @@
 # EU4 Province Editor
-**Province History Editor for Europa Universalis IV**
+
+Province History Editor for Europa Universalis IV
 
 Written by Jakub21
 
@@ -8,30 +9,87 @@ October 2017
 Published and Developed on GitHub
 
 
-***Requirements***
+## Requirements
 
-- Python 3
+- Python 3 (Program tested and built on version 3.6.2)
 - Pandas package (v0.20)
 - PyYAML package (v3.12)
 
 
-***TODOs***
+## Usage
 
-- Loader for game files
+#### Basics
+- Download repository and unrar it anywhere
+- Open console / terminal in location where program is located
+- Launch file *script.py* using Python 3
+- After everything is loaded user can input commands
+
+#### Commands
+**Explaination of symbols and names used below**
+
+- `<word>`    - Keyword; Only use listed words or function will not be launched
+- `[word]`    - Any single word. In this case any word is allowed or allowed words depend on loaded data
+- `(word)`    - Any word or list of words. Allowed words - Same as above
+- `?`         - Prefix used to indicate that argument is optional
+
+- `AllData`   - Main data scope.
+
+    Affected by : `load`, `append`
+    Loaded by   : `save`, `select`, `append`
+
+- `Selection` - Current selection.
+
+    Affected by : Any data-manipulation function
+    NOTE        : Use `apply` if you want data from selection to be saved
+
+**Commands**
+- *load <mode> [location]*
+- *save <mode> [location]*
+- *apply*
+- *select [attribute] (value)*
+- *subselect [attribute] (value)*
+- *append*
+- *sort <scope> (attribute)*
+- *set [attribute] [value]*
+- *inprov [id] [attribute] [value]*
+- *print ?<mode> ?[attribute] ?[value]*
+- *clear*
+- *help*
+- *exit*
+
+
+## TODOs
+
 - Solve problems that cause display of Pandas' warning message during usage of functions:
-    'sort', 'inprov', 'replace'
-- Allow user to change which (and how many) columns and rows should be displayed
-- General usage info in readme
-- 'gamefiles.py' imports 'script.py'. Is that correct?
+    *sort*, *inprov*, *replace*
+- Allow user to change which (and how many) columns and rows should be displayed (currently in `meta.py > init_settings() > settings{}`)
+- Extend usage info
+- Allow detailed info in `meta.raise_error`
 
 
 
 
-# Changelog
+## Changelog v0.1
 
-***Version 0.1***
+**Game Files Parser II** (Last on Game-Files-Parser branch)
 
-**Game Files Parser I** (Last on Game-Files-Parser branch)
+Branch-Related
+- Parser for region files is now ready for use
+- Solved problems with YAML parser (Numbers that followed colons and encoding)
+- Values that consist of multiple words are now loaded correctly
+- Region names are shortened (can be disabled in settings)
+
+Other Changes
+- Handling Platform-Related differences moved to settings
+- Error messages and settings were moved to separate file
+- Source files were moved to subdirectory
+
+Creation of file *src/meta.py*
+    There was situation where `gamefiles.py` was forced to import and then call funtion (*script.raise_error()*) from `script.py`. This probably should not happen so the function was moved to `meta.py`. Then the settings were moved here as well. It was 2nd source file so `src` subdirectory was created.
+
+
+
+**Game Files Parser I**
 
 Branch-Related
 - Recursive parser for history files

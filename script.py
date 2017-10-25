@@ -73,101 +73,10 @@ Creating new selection or reducing previous one discards changes that were not a
 
 
 
-import gamefiles
+import src.gamefiles as gamefiles
+from src.meta import raise_error, init_settings
 import pandas as pd
-import codecs, sys, os
-from platform import system as psys
-
-
-################################
-# SESSION INIT / ERRORS HANDLING / HELP DISPLAY
-################################
-def apply_settings():
-    # Data from global variable
-    if settings['preceding_blank_line']:
-        settings['error_prefix'] = '\n' + settings['error_prefix']
-        settings['input_prefix'] = '\n' + settings['input_prefix']
-    pd.set_option('display.max_rows', settings['pandas_max_rows'])
-    pd.set_option('display.max_columns', settings['pandas_max_cols'])
-    pd.set_option('display.width', settings['pandas_disp_width'])
-    pass
-
-def init_session():
-    global settings
-    settings = {
-        'pandas_max_rows'       : 500,
-        'pandas_max_cols'       : 50,
-        'pandas_disp_width'     : 250,
-        'preceding_blank_line'  : False, #Blank line before every input and error message
-        'history_subdir'        : '/history/',
-        'error_prefix'          : '(Error) ',
-        'input_prefix'          : '[Editor] > ',
-        'program_header'        : 'EU4 Province Editor v0.1',
-        'legal_nonexit_calls'   : [
-                # If user calls func that isnt listed here an error is raised
-                'load', 'save',
-                'apply',
-                'select', 'subselect', 'append', 'deselect',
-                'sort',
-                'set', 'replace', 'inprov',
-                'print', 'clear',
-                'help',
-            ],
-        'legal_exit_calls'      : [
-                'exit', 'quit', 'leave'
-            ],
-        'historyfile_keys'      : {
-            'cores'         : 'add_core',
-            'claims'        : 'add_claim',
-            'owner'         : 'owner', #conrtoller
-            'culture'       : 'culture',
-            'religion'      : 'religion',
-            'hre'           : 'hre',
-            'tax'           : 'base_tax',
-            'prod'          : 'base_production',
-            'manpwr'        : 'base_manpower',
-            'trade_goods'   : 'trade_goods',
-            'capital'       : 'capital',
-            'city'          : 'is_city',
-            'ntv_size'      : 'native_size',
-            'ntv_ferc'      : 'native_ferocity',
-            'ntv_hstl'      : 'native_hostileness',
-            'cost'          : 'extra_cost',
-            'fort'          : 'fort_15th',
-            'discovered'    : 'discovered_by',
-            'modifiers'     : ['add_permanent_province_modifier', 'name'],
-        },
-        #OTHER LEGAL KEYS BESIDES THOSE FROM HISTORY
-            # area, region, segion, id, filename
-        'column_order'          : [
-            'id', 'filename', 'capital', 'tax', 'owner', 'modifiers'
-        ],
-    }
-    ################################
-    apply_settings()
-    gamefiles.init(settings)
-    return
-
-
-def raise_error(error_type, fatal=False):
-    print(settings['error_prefix'], end = "")
-    messages = {
-        'illegal_call'          : 'Unrecognized function',
-        'unknown_subcall'       : 'Unrecognized parameter for called function',
-        'too_many_arguments'    : 'Function recieved too many arguments',
-        'too_less_arguments'    : 'Function recieved not enough arguments',
-        'data_not_loaded'       : 'No data was loaded',
-        'data_not_selected'     : 'No data was selected',
-        'unknown_attribute'     : 'Unrecognized column name',
-        'filestream_error'      : 'Selected file does not exist or the permission was denied',
-        'unknown_fstr_error'    : 'Unknown error occured during file loading',
-        'encoding_bom_error'    : 'Loaded file uses encoding with BOM and can not be loaded', # depracated
-        'nolocalisation_error'  : 'Could not load localisation'
-    }
-    print(messages[error_type])
-    if fatal:
-        print("Program Terminated")
-        exit(1)
+import os
 
 ################################
 # FILES MANIPULATION
@@ -190,10 +99,7 @@ def load(ltype, location, depth):
             except UnicodeDecodeError:
                 pass # Intended
     if ltype == 'game':
-        #try:
-            return gamefiles.load(location)
-        #except (FileNotFoundError, PermissionError):
-        #    raise_error('filestream_error')
+        return gamefiles.load(location)
 
 def save(ltype, data, location):
     if ltype == 'sheet':
@@ -397,10 +303,7 @@ def interactive():
 
 
         if funcname == 'clear':
-            if psys() == 'Windows':
-                os.system('cls')
-            else:
-                os.system('clear')
+            os.system(settings['term_clear'])
             print(settings['program_header'])
 
 
@@ -413,8 +316,23 @@ def interactive():
 # MAIN
 ################################
 
+def apply_settings(settings):
+    if settings['preceding_blank_line']:
+        settings['error_prefix'] = '\n' + settings['error_prefix']
+        settings['input_prefix'] = '\n' + settings['input_prefix']
+    pd.set_option('display.max_rows', settings['pandas_max_rows'])
+    pd.set_option('display.max_columns', settings['pandas_max_cols'])
+    pd.set_option('display.width', settings['pandas_disp_width'])
+    return True
+
 def main():
-    init_session()
+    ################################
+    # INIT
+    global settings
+    settings = init_settings()
+    apply_settings(settings)
+    gamefiles.init(settings)
+    ################################
     print(settings['program_header'])
     interactive()
 
