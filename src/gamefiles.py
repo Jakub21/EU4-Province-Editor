@@ -12,6 +12,8 @@ import yaml
 def init(_settings):
     global settings
     settings = _settings
+    global cwd
+    cwd = getcwd()
 
 ################################
 # LOAD FILE AND REMOVE COMMENTS
@@ -199,7 +201,6 @@ def prepare_yaml(data):
 ################################
 # MAIN GAME FILE LOAD PROCEDURE
 def load(location):
-    cwd = getcwd()
     sep = settings['dir_sep']
     histdir = cwd + sep + location + sep + settings['history_subdir'] + sep
     datadir = cwd + sep + location + sep
@@ -207,7 +208,7 @@ def load(location):
     segions = getregions(getfile(datadir + 'superregion.txt').split()   , 1)
     regions = getregions(getfile(datadir + 'region.txt').split()        , 2)
     areas   = getregions(getfile(datadir + 'area.txt').split()          , 1)
-    if (segions.type() == None) or (regions.type() == None) or (areas.type() == None):
+    if (type(segions) == None) or (type(regions) == None) or (type(areas) == None):
         return None
     regioning = merge_regions(segions, regions, areas)
     ################################
@@ -263,7 +264,7 @@ def load(location):
             value = province[key]
             #print(value)
             if type(value) == list:
-                row.append('&'.join(value))
+                row.append(settings['multival_sep'].join(value))
             else:
                 row.append(value)
         rows.append(row)
@@ -279,5 +280,41 @@ def load(location):
 # SAVE GAME
 ################################################################
 
-def save(arg1, arg2):
-    print('Function is not available.')
+def save(data, location):
+    idlist = data.index.values
+    data = data.values.tolist()
+    columns = settings['column_order'][1:] # 1st is ID and it is not in values so it should be excluded
+    prov_index = 0
+    for row in data:
+        provid = idlist[prov_index]
+        text = '#Province no.' + str(provid) + '\n\n'
+        filename = 'None'
+        for i in range(len(columns)):
+            cname = columns[i]
+            value = row[i]
+            if cname == 'filename':
+                filename = value
+            try:
+                key = settings['historyfile_keys'][cname]
+            except KeyError:
+                continue # Element should not be saved (eg. Filename or ID)
+            if settings['multival_sep'] in value:
+                value = value.split(settings['multival_sep'])
+            else:
+                value = [value]
+            for element in value:
+                if element == '':
+                    continue
+                if type(key) == str:
+                    text += key + ' = ' + element + '\n'
+                else:
+                    if len(key) < 2:
+                        print('Error (SaveGame:CreateHistoryFile)')
+                    #NOTE: There should be proper converter for this.
+                    text += key[0] + ' = {\n'
+                    text += '    ' + key[1] + ' = ' + element + '\n'
+                    text += '    ' + 'duration = -1\n' #TODO
+                    text += '}\n'
+        prov_index += 1
+        sep = settings['def_dir_sep']
+        open(cwd+sep+ location+sep+ filename, 'w').write(text)

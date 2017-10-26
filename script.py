@@ -108,7 +108,7 @@ def save(ltype, data, location):
         try:
             return gamefiles.save(data, location)
         except:
-            print("ERROR: Unhandled error occured in Main when tried to call 'gamefiles.save()'")
+            print('\n')
             raise
 
 

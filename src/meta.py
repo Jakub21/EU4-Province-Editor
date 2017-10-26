@@ -10,6 +10,7 @@ def init_settings():
         'preceding_blank_line'  : False, # Blank line before every input and error message
         'shorten_region_names'  : True,
         'def_dir_sep'           : '/',
+        'multival_sep'          : '&',
         'history_subdir'        : 'provinces', # With out directory separators
         'error_prefix'          : '(Error) ',
         'input_prefix'          : '[Editor] > ',
@@ -32,17 +33,18 @@ def init_settings():
                 'exit', 'quit', 'leave'
             ],
         'historyfile_keys'      : {
+            'capital'       : 'capital',
             'cores'         : 'add_core',
             'claims'        : 'add_claim',
-            'owner'         : 'owner', #conrtoller
+            'owner'         : 'owner',
+            'cntrl'         : 'controler',
             'culture'       : 'culture',
             'religion'      : 'religion',
             'hre'           : 'hre',
             'tax'           : 'base_tax',
             'prod'          : 'base_production',
-            'manpwr'        : 'base_manpower',
+            'manp'          : 'base_manpower',
             'trade_goods'   : 'trade_goods',
-            'capital'       : 'capital',
             'city'          : 'is_city',
             'ntv_size'      : 'native_size',
             'ntv_ferc'      : 'native_ferocity',
@@ -53,10 +55,27 @@ def init_settings():
             'modifiers'     : ['add_permanent_province_modifier', 'name'],
         },
         #OTHER LEGAL KEYS BESIDES THOSE FROM HISTORY
-            # area, region, segion, id, filename
+            # area, region, segion, id, filename, name
         'column_order'          : [
-            'id', 'filename', 'name', 'capital', 'tax', 'owner', 'cores', 'modifiers',
-            'area', 'region', 'segion'
+            #Keep 'ID' at 1st position
+            'id', 'name', 'area', 'region', 'segion', 'filename',
+            'capital',
+            'cores',
+            'claims',
+            'owner',
+            'cntrl',
+            'culture',
+            'religion',
+            'hre',
+            'tax',
+            'prod',
+            'manp',
+            'trade_goods',
+            'city',
+            'cost',
+            'fort',
+            'discovered',
+            'modifiers',
         ],
     }
     ################################

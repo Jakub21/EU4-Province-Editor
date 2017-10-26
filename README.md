@@ -69,8 +69,8 @@ Published and Developed on GitHub
     - `[value]`     - value to insert
 - `print` `?<mode>` `?[attribute]` `?[value]`
     - `?<mode>`     - allowed words:
-        - `only`    (selective print from Selection)
-        - `where`   (selective print from AllData)
+        - `only`    (selective print of Selection)
+        - `where`   (selective print of AllData)
         - `all`     (this one takes no more args)
     - `?[attribute]`- column name to search values in
     - `?[value]`    - values to search for (only those will be displayed)
@@ -96,8 +96,14 @@ Published and Developed on GitHub
 
 ## Changelog for version 0.1
 
-### Game Files Parser III
+### Game Files Parser IV
 **Last on Game-Files-Parser branch**
+- Program can now save game-like history files
+- Corrected usage of `type()` (It was used as method)
+- Changed which attributes are loaded by default  
+(It probably affected `print` but it will be repaired after branch's merged)
+
+### Game Files Parser III
 
 Branch-Related
 - Province ID is now set as index automaticly (if 'id' is not in columns list fatal error is raised)
@@ -122,9 +128,9 @@ Other Changes
 - Error messages and settings were moved to separate file
 - Source files were moved to subdirectory
 
-Creation of file `src/meta.py`
+Creation of file `src/meta.py`:
 
-    There was situation where `gamefiles.py` was forced to import and then call funtion (`script.raise_error()`) from `script.py`. This probably should not happen so the function was moved to `meta.py`. Then the settings were moved here as well. It was 2nd source file so `src` subdirectory was created.
+There was situation where `gamefiles.py` was forced to import and then call funtion (`script.raise_error()`) from `script.py`. This probably should not happen so the function was moved to `meta.py`. Then the settings were moved here as well. It was 2nd source file so `src` subdirectory was created.
 
 
 
