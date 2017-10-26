@@ -1,12 +1,11 @@
 # EU4 Province Editor
 
-Province History Editor for Europa Universalis IV
+Province History Editor for Europa Universalis IV  
+Written by Jakub21  
+October 2017  
+Published and Developed on GitHub  
 
-Written by Jakub21
 
-October 2017
-
-Published and Developed on GitHub
 
 
 ## Requirements
@@ -16,15 +15,17 @@ Published and Developed on GitHub
 - PyYAML package (v3.12)
 
 
+
+
 ## Usage
 
-#### Basics
+### Basics
 - Download repository and unrar it anywhere
 - Open console / terminal in location where program is located
-- Launch file *script.py* using Python 3
+- Launch file `script.py` using Python 3
 - After everything is loaded user can input commands
 
-#### Commands
+### Commands
 **Explaination of symbols and names used below**
 
 - `<word>`    - Keyword; Only use listed words or function will not be launched
@@ -34,44 +35,81 @@ Published and Developed on GitHub
 
 - `AllData`   - Main data scope.
 
-    Affected by : `load`, `append`
-    Loaded by   : `save`, `select`, `append`
+    - Affected by : `load`, `append`
+    - Loaded by   : `save`, `select`, `append`
 
 - `Selection` - Current selection.
 
-    Affected by : Any data-manipulation function
-    NOTE        : Use `apply` if you want data from selection to be saved
+    - Affected by : Any data-manipulation function
+    - NOTE        : Use `apply` if you want data from selection to be saved
 
 **Commands**
-- *load <mode> [location]*
-- *save <mode> [location]*
-- *apply*
-- *select [attribute] (value)*
-- *subselect [attribute] (value)*
-- *append*
-- *sort <scope> (attribute)*
-- *set [attribute] [value]*
-- *inprov [id] [attribute] [value]*
-- *print ?<mode> ?[attribute] ?[value]*
-- *clear*
-- *help*
-- *exit*
+- `load` `<mode>` `[location]`
+    - `<mode>`      - allowed words: `game`, `sheet`
+    - `[location]`  - location of file / folder to load
+- `save` `<mode>` `[location]`
+    - `<mode>`      - allowed words: `game`, `sheet`
+    - `[location]`  - location where file / folder should be saved
+- `select` `[attribute]` `(value)`
+    - `[attribute]` - column to search for value(s) in
+    - `(value)`     - rows with these will be selected
+- `subselect` `[attribute]` `(value)`
+    - `[attribute]` - column to search for value(s) in
+    - `(value)`     - rows with OTHER than these will be removed from selection
+- `sort` `<scope>` `(attribute)`
+    - `<scope>`     - allowed words: `selection`, `all`
+    - `(attribute)` - column to sort by  
+        (NOTE: Keyword `location` can be used. The result is the same when using `segion region area`)
+- `set` `[attribute]` `[value]`
+    - `[attribute]` - column to change value in
+    - `[value]`     - value to insert
+- `inprov` `[id]` `[attribute]` `[value]`
+    - `[id]`        - id of province to affect
+    - `[attribute]` - column name to affect
+    - `[value]`     - value to insert
+- `print` `?<mode>` `?[attribute]` `?[value]`
+    - `?<mode>`     - allowed words:
+        - `only`    (selective print from Selection)
+        - `where`   (selective print from AllData)
+        - `all`     (this one takes no more args)
+    - `?[attribute]`- column name to search values in
+    - `?[value]`    - values to search for (only those will be displayed)
+- `append`
+- `apply`
+- `clear`
+- `help`
+- `exit`
+
+
 
 
 ## TODOs
 
 - Solve problems that cause display of Pandas' warning message during usage of functions:
-    *sort*, *inprov*, *replace*
+    `sort`, `inprov`, `replace`
 - Allow user to change which (and how many) columns and rows should be displayed (currently in `meta.py > init_settings() > settings{}`)
 - Extend usage info
-- Allow detailed info in `meta.raise_error`
+- Keep docstr in script.py updated
 
 
 
 
-## Changelog v0.1
+## Changelog for version 0.1
 
-**Game Files Parser II** (Last on Game-Files-Parser branch)
+### Game Files Parser III
+**Last on Game-Files-Parser branch**
+
+Branch-Related
+- Province ID is now set as index automaticly (if 'id' is not in columns list fatal error is raised)
+- Every error found in procedure of Loading Game Files was repaired.
+
+Other Changes
+- Corrections in ReadMe
+- Detailed error info
+
+
+
+### Game Files Parser II
 
 Branch-Related
 - Parser for region files is now ready for use
@@ -84,12 +122,13 @@ Other Changes
 - Error messages and settings were moved to separate file
 - Source files were moved to subdirectory
 
-Creation of file *src/meta.py*
-    There was situation where `gamefiles.py` was forced to import and then call funtion (*script.raise_error()*) from `script.py`. This probably should not happen so the function was moved to `meta.py`. Then the settings were moved here as well. It was 2nd source file so `src` subdirectory was created.
+Creation of file `src/meta.py`
+
+    There was situation where `gamefiles.py` was forced to import and then call funtion (`script.raise_error()`) from `script.py`. This probably should not happen so the function was moved to `meta.py`. Then the settings were moved here as well. It was 2nd source file so `src` subdirectory was created.
 
 
 
-**Game Files Parser I**
+### Game Files Parser I
 
 Branch-Related
 - Recursive parser for history files
@@ -102,26 +141,30 @@ Other Changes
 - Help messages moved to script's docstr
 
 
-**Initial' Repair II** (Last on Master branch)
 
-- Using unknown attribute in 'print' function with mode 'only' is longer considered fatal error
+### Initial' Repair II
+**Last on Master branch**
+
+- Using unknown attribute in `print` function with mode `only` is longer considered fatal error
 - Solved problems with loading CSV sheets encoded with UTF-8 BOM
 - Default encoding when saving CSV sheets is now UTF-8 BOM (Spreadsheet programs default)
 - Changed usage / help messages
 
 
-**Initial' Repair I**
 
-- Functions 'inprov' and 'set' now work but Pandas error is displayed
+### Initial' Repair I
+
+- Functions `inprov` and `set` now work but Pandas error is displayed
 - Removed BOM converter because it did not work. Error is raised instead
 - Optimized argument parsing in interactive functions (less code)
 - Full Help Message has info about valid exit calls
-- Function 'clear' is now cross-platform
-- Added more options for 'print'
+- Function `clear` is now cross-platform
+- Added more options for `print`
 
 
-**Initial Commit**
+
+### Initial Commit
 
 - Initial version of program.
-- Lacks basic features and contains bany bugs.
+- Lacks basic features and contains many bugs.
 - Files can not be loaded from GameFiles

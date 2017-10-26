@@ -1,8 +1,11 @@
 from src.meta import raise_error
 from pandas import DataFrame
-import pandas as pd
 from os import getcwd, listdir
 import yaml
+
+################################################################
+# LOAD GAME
+################################################################
 
 ################################
 # INITIALISE SESSION
@@ -12,9 +15,12 @@ def init(_settings):
 
 ################################
 # LOAD FILE AND REMOVE COMMENTS
-################################
 def getfile(fdir):
-    data = open(fdir).read().split('\n')
+    try:
+        data = open(fdir).read().split('\n')
+    except FileNotFoundError:
+        raise_error('filestream_error', False, fdir)
+        return None
     ndata = ''
     for line in data:
         nline = ''
@@ -91,10 +97,10 @@ def merge_regions(segions, regions, areas):
 
 ################################
 # RECURSIVE WORDLIST ANALYSIS (used in LOAD)
-key_index = 1
-val_index = 0
-eqs_index = 2
 def getscope(data, r_depth = 0):
+    key_index = 1
+    val_index = 0
+    eqs_index = 2
     depth = 0
     index = 1
     total_index = 0
@@ -142,7 +148,7 @@ def getscope(data, r_depth = 0):
                 except KeyError:
                     result[key] = [getscope(subscope, r_depth+1)]
                 except TypeError: # Move exception level up
-                    return Exception
+                    return None
             else:
                 try:
                     result[key].append(value)
@@ -150,8 +156,7 @@ def getscope(data, r_depth = 0):
                     result[key] = [value]
         if index == eqs_index:
             if word != '=':
-                raise_error('hparser_equal_sign')
-                return Exception
+                return None
         index = (index+1)%3
         total_index += 1
     return result
@@ -202,6 +207,8 @@ def load(location):
     segions = getregions(getfile(datadir + 'superregion.txt').split()   , 1)
     regions = getregions(getfile(datadir + 'region.txt').split()        , 2)
     areas   = getregions(getfile(datadir + 'area.txt').split()          , 1)
+    if (segions.type() == None) or (regions.type() == None) or (areas.type() == None):
+        return None
     regioning = merge_regions(segions, regions, areas)
     ################################
     localisation = {}
@@ -219,20 +226,21 @@ def load(location):
         except KeyError:
             pass
     if localisation == {}:
-        raise_error('nolocalisation_error')
+        raise_error('nolocalisation_error', False)
         return
     ################################
     rows = []
     for filename in listdir(histdir):
         fdir = histdir + filename
         data = getscope(getfile(fdir).split())
-        if type(data) == type: # TODO
+        if type(data) == None:
+            raise_error('hparser_equal_sign', False, [fdir])
             return
         province = {}
         provid = getid(filename)
         if provid == '':
             continue
-        province['id']          = provid
+        province['id']          = int(provid)
         province['filename']    = filename
         province['name']        = localisation['PROV'+provid]
         province['area']        = regioning[provid][0]
@@ -260,19 +268,16 @@ def load(location):
                 row.append(value)
         rows.append(row)
     ################################
-    #for row in rows:
-    #    print('-'*64)
-    #    for el in row:
-    #        print('>"'+el+'"')
-    #    print('\n')
     df = DataFrame(rows, columns = settings['column_order'])
-    ################################
+    df.set_index('id', inplace = True)
     return df
 
 
 
 
-
+################################################################
+# SAVE GAME
+################################################################
 
 def save(arg1, arg2):
     print('Function is not available.')

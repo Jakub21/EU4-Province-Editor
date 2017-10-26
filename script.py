@@ -94,7 +94,7 @@ def load(ltype, location, depth):
                     except: pass
                 return data
             except (FileNotFoundError, PermissionError):
-                raise_error('filestream_error')
+                raise_error('filestream_error', False, [location])
                 break # No encoding will open this file if this happens
             except UnicodeDecodeError:
                 pass # Intended
@@ -127,7 +127,7 @@ def interactive():
         if funcname in settings['legal_exit_calls']:
             break
         if funcname not in settings['legal_nonexit_calls']:
-            raise_error('illegal_call')
+            raise_error('illegal_call', False, [funcname])
 
         ################################
         # SUB-CALLS AND ARGUMENTS PARSING
@@ -144,7 +144,7 @@ def interactive():
         if funcname in ['apply']: #No arguments needed
             try:
                 subcall = call[1]
-                raise_error('too_many_arguments')
+                raise_error('too_many_arguments', False)
                 continue
             except:
                 pass
@@ -171,14 +171,14 @@ def interactive():
 
         if funcname == 'load':
             if subcall not in ['sheet', 'game']:
-                raise_error('unknown_subcall')
+                raise_error('unknown_subcall', False, [subcall])
                 continue
             data = load(subcall, directory, 0)
 
 
         if funcname == 'save':
             if subcall not in ['sheet', 'game']:
-                raise_error('unknown_subcall')
+                raise_error('unknown_subcall', False, [subcall])
                 continue
             data = save(subcall, data, directory)
 
@@ -194,9 +194,9 @@ def interactive():
                 if funcname == 'subselect':
                     selection = selection.loc[data[attribute].isin(values)]
             except (AttributeError, TypeError):
-                raise_error('data_not_loaded')
+                raise_error('data_not_loaded', False)
             except KeyError:
-                raise_error('unknown_attribute')
+                raise_error('unknown_attribute', False, [attribute])
 
 
         if funcname == 'append':
@@ -204,14 +204,9 @@ def interactive():
                 newsel = data.loc[data[attribute].isin(values)]
                 selection = pd.concat([selection, newsel])
             except (AttributeError, TypeError):
-                raise_error('data_not_loaded')
+                raise_error('data_not_loaded', False)
             except KeyError:
-                raise_error('unknown_attribute')
-
-
-        if funcname == 'deselect':
-            print("(SCRIPT) Function is not done yet and has no effect.")
-            pass #TODO
+                raise_error('unknown_attribute', False, [attribute])
 
 
         if funcname == 'sort':
@@ -219,25 +214,25 @@ def interactive():
                 scope = call[1]
                 attrlist = call[2:]
             except:
-                raise_error('too_less_arguments')
+                raise_error('too_less_arguments', False, ['sort', 'scope', 'attributes'])
                 continue
-            if attrlist == ['location']: #TEMP - Only works with CSV used for tests
+            if attrlist == ['location']:
                 attrlist = ['segion', 'region', 'area']
             if scope == 'all':
                 try:
                     data.sort_values(attrlist, inplace = True)
                 except AttributeError:
-                    raise_error('data_not_loaded')
+                    raise_error('data_not_loaded', False)
             elif scope == 'selection':
                 try:
                     selection.sort_values(attrlist, inplace = True)
                 except AttributeError:
-                    raise_error('data_not_selected')
-            else: raise_error('unknown_subcall')
+                    raise_error('data_not_selected', False)
+            else: raise_error('unknown_subcall', False, [scope])
 
 
         if funcname == 'set':
-            selection.loc[:, attribute] = [values][0]
+            selection.loc[:, attribute] = ' '.join(values)
 
 
         if funcname == 'replace': #Separate argument parser
@@ -255,11 +250,14 @@ def interactive():
             try:
                 provid = int(call[1])
                 attribute = call[2]
-                values = call[3]
+                values = ' '.join(call[3:])
             except:
                 show_usage(funcname)
                 continue
-            selection.loc[provid, attribute] = [values][0]
+            try:
+                selection.loc[provid, attribute] = values
+            except AttributeError:
+                raise_error('data_not_selected', False)
             #NOTE: Pandas message about indexing and copying is displayed
 
 
@@ -270,7 +268,7 @@ def interactive():
                 mode = call[1]
                 try:
                     attribute = call[2]
-                    values = call[3]
+                    values = call[3:]
                     printwhere_has_args = True
                 except: pass #Only required if mode is 'where' or 'only'
             except: pass #Argument is optional
@@ -280,7 +278,7 @@ def interactive():
                 print(data)
             elif mode in ['where', 'only']:
                 if not printwhere_has_args:
-                    raise_error('too_less_arguments')
+                    raise_error('too_less_arguments', False, ['print', 'where/only', 'attribute', 'values'])
                 try:
                     if type(values) != list:
                         try:
@@ -293,13 +291,13 @@ def interactive():
                         psel = selection.loc[data[attribute].isin(values)]
                     print(psel)
                 except (AttributeError, TypeError):
-                    raise_error('data_not_loaded')
+                    raise_error('data_not_loaded', False)
                     continue
                 except KeyError:
-                    raise_error('unknown_attribute')
+                    raise_error('unknown_attribute', False, [attribute])
                     continue
             else:
-                raise_error('unknown_subcall')
+                raise_error('unknown_subcall', False, [mode])
 
 
         if funcname == 'clear':
