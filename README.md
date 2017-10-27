@@ -25,6 +25,31 @@ Published and Developed on GitHub
 - Launch file `script.py` using Python 3
 - After everything is loaded user can input commands
 
+
+### Loading files
+
+**Directory of Game Files**
+
+When loading game files directory:
+```
+script_location/
+    selected_directory/
+        provinces/
+            *province files with original names
+        localisation.yml (File with province names in any language)
+        area.txt
+        region.txt
+        superregion.txt
+    script.py
+```
+Selected directory must be sub- of where script is located and console is working. Can be located in deeper folder eg. `script_location/folder/another_one/selected_directory/`
+but in this case command looks like:
+`load game folder/another_one/selected_directory`  
+Note that program doesn't copy regioning and localisation files automaticly
+
+
+
+
 ### Commands
 **Explaination of symbols and names used below**
 
@@ -85,8 +110,5 @@ Published and Developed on GitHub
 
 ## TODOs
 
-- Solve problems that cause display of Pandas' warning message during usage of functions:
-    `sort`, `inprov`, `replace`
-- Allow user to change which (and how many) columns and rows should be displayed (currently in `meta.py > init_settings() > settings{}`)
+- Solve problems that cause display of Pandas' warning message during usage of functions: `sort`, `inprov`
 - Extend usage info
-- Keep docstr in script.py updated

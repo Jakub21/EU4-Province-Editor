@@ -3,338 +3,262 @@
 EU4 Province Editor
 Jakub21, October 2017
 Published and Developed on GitHub
+--------------------------------
+Version 0.1.0 - Not released
+--------------------------------
+Repository site
+Visit for updates and usage info
 github.com/Jakub21/EU4-Province-Editor
 --------------------------------
-Shell-styled province editor.
-Generates files readable for game
+Province Editor is a shell-styled program that allows easy edition of province history.
+User can change attributes in areas or regions with out need to look for files in long list.
+Program can generate spreadsheets with provinces' data or files that are ready to copy to mod.
 --------------------------------
-Explaination of usage symbols
-<keyword>   - Only use words listed next to keyword or function will not be launched
-[value]     - Any value is allowed OR allowed values depend on loaded data
-(value)     - Just like above but multiple words are allowed
-?           - Prefix indicating that argument is optional
-Alldata     - Main data scope. 'load' and 'append' functions are only that affect it.
-                When 'save', 'select' or 'append' is used - Data is loaded from this scope.
-Selection   - Current selection. Every function that modifies data operates here.
-                Function 'apply' moves data from Selection to AllData
---------------------------------
-Usage of Interactive Functions
-    load <mode> [location]
-        <mode>  'sheet'     - load from CSV
-                'game'      - load from directory with game-like files
-        [location] - Location of file/directory. Must be subdir of location of script
-    save <mode> [location]
-        <mode>  'sheet'     - save to CSV
-                'game'      - generate game-readable files
-        [location] - Location of files. Subdirectory of location of script
-    apply
-        Update Alldata with changes from Selection
-    select [attribute] (value)
-        [attribute] - Name of column that will be searched for values
-        (value)     - Provinces with those values will create selection
-    subselect [attribute] (value)
-        [attribute] - Name of column that will be searched for values
-        (value)     - Provinces with values OTHER than this will be removed from selection
-    append
-        [attribute] - Name of column that will be searched for values
-        (value)     - Provinces with those values will be added to selection
-        Append provinces to selection
-    sort <scope> (attribute)
-        <scope> 'all'       - Alldata will be sorted
-                'selection' - Selection will be sorted
-        (attribute) Column names data should be sorted by
-        Sort data
-    set [attribute] [value]
-        [attribute] - Column to change
-        [value] - Value that should be put in column
-        Selection is affected
-    inprov [id] [attribute] [value]
-        [id]        - ID of province to change value in
-        [attribute] - Column name
-        [value]     - Value to set
-    print ?<mode> ?[attribute] ?[value]
-        <mode>  'all'       - Print all loaded data
-                'selection' - Print whole selection         (FUNCTION'S DEFAULT)
-                'all_where' - Print provinces from Alldata when condition is true
-                'sel_where' - Print provinces from Selection when condition is true
-        [attribute] - Column to look for values in
-        [value]     - Value to look for
-        'attribute' and 'value' argument are only required when mode is 'all_where' or 'sel_where'
-    clear
-        Clear screen. No data is affected.
-    help
-        Show this message
-    exit
-        Leave program
---------------------------------
-Selection info
-Creating new selection or reducing previous one discards changes that were not applied
 '''
 
 
-
+################################
 import src.gamefiles as gamefiles
-from src.meta import raise_error, init_settings
+from src.meta import raise_error, get_const
 import pandas as pd
-import os
+from os import system, makedirs, path
+
+
 
 ################################
-# FILES MANIPULATION
+# DATA MANIPULATION
 ################################
-def load(ltype, location, depth):
+def _load(filetype, location):
     encodings = ['utf-8', 'utf-8-sig']
-    if ltype == 'sheet':
-        for encoding in encodings:
-            try:
-                data = pd.read_csv(location, encoding = encoding)
-                for q in ['id', 'ProvID']:
-                    try:
-                        data.set_index(q, inplace=True)
-                        break
-                    except: pass
-                return data
-            except (FileNotFoundError, PermissionError):
-                raise_error('filestream_error', False, [location])
-                break # No encoding will open this file if this happens
-            except UnicodeDecodeError:
-                pass # Intended
-    if ltype == 'game':
-        return gamefiles.load(location)
-
-def save(ltype, data, location):
-    if ltype == 'sheet':
-        data.to_csv(location, encoding = 'utf-8-sig')
-    if ltype == 'game':
+    if filetype == 'sheet':
         try:
-            return gamefiles.save(data, location)
-        except:
-            print('\n')
-            raise
+            for encoding in encodings:
+                alldata = pd.read_csv(location, encoding = encoding)
+                alldata.set_index('id', inplace = True)
+                return alldata
+        except (FileNotFoundError, PermissionError):
+            raise_error('filestream_error', data=location)
+            return None
+        except UnicodeDecodeError:
+            pass
+    elif filetype == 'game':
+        return gamefiles.load(location)
+    else:
+        raise_error('unknown_subcall')
+        return None
 
 
 ################################
-# INPUT ANALYSIS
+def _save(filetype, location):
+    if not path.exists(location):
+        makedirs(location)
+    if filetype == 'sheet':
+        alldata.to_csv(location, encoding = 'utf-8-sig')
+    elif filetype == 'game':
+        history_path = location+const['def_dir_sep']+const['history_subdir']
+        if not path.exists(history_path):
+            makedirs(history_path)
+        gamefiles.save(alldata, location)
+
+
 ################################
-def interactive():
-    '''Analysis of input. Calls relevant functions.'''
-    data = None #VarName Declaration
+def _apply():
+    alldata.update(selection)
+
+
+################################
+def _select(_from, attribute, values):
+    global selection
+    try:
+        if _from == 'all':
+            selection = alldata.loc[alldata[attribute].isin(values)]
+        if _from == 'selection':
+            selection = selection.loc[selection[attribute].isin(values)]
+    except (AttributeError, TypeError):
+        raise_error('data_not_loaded')
+        return None
+    except KeyError:
+        raise_error('unknown_attribute', data=attribute)
+        return None
+
+
+################################
+def _append(attribute, values):
+    global selection
+    try:
+        new_selection = alldata.loc[alldata[attribute].isin(values)]
+        selection = pd.concat([selection, new_selection])
+    except (AttributeError, TypeError):
+        raise_error('data_not_loaded')
+        return None
+    except KeyError:
+        raise_error('unknown_attribute', data=attribute)
+        return None
+
+
+################################
+def _sort(scope_name, sort_by):
+    if scope_name == 'all':
+        try:
+            alldata.sort_values(sort_by, inplace=True)
+        except AttributeError:
+            raise_error('data_not_loaded')
+            return None
+    elif scope_name == 'selection':
+        try:
+            selection.sort_values(sort_by, inplace=True)
+        except AttributeError:
+            raise_error('data_not_selected', False)
+            return None
+    else:
+        raise_error('unknown_subcall', data=scope_name)
+        return None
+
+
+################################
+def _set(attribute, value):
+    # TODO: Pandas warning message may be displayed (Not tested)
+    for i in range(value.count(None)):
+        value.remove(None)
+    value = ' '.join(value)
+    try:
+        selection.loc[:, attribute] = value
+    except AttributeError:
+        raise_error('data_not_selected')
+        return None
+
+
+################################
+def _inprov(provid, attribute, value):
+    # TODO: Pandas warning message may be displayed (Not tested)
+    for i in range(value.count(None)):
+        value.remove(None)
+    value = ' '.join(value)
+    try:
+        selection.loc[provid, attribute] = value
+    except AttributeError:
+        raise_error('data_not_selected')
+        return None
+
+
+################################
+def _print(scope_name='selection', mode='full', attribute='', values=[]):
+    # TODO: Test function to find possible errors
+    # TODO: Selective print of rows
+    drop_list = const['drop_from_print']
+    print_selection = None
+    if scope_name == 'all':
+        try:
+            print_selection = alldata.drop(drop_list, axis=1)
+        except AttributeError:
+            raise_error('data_not_loaded')
+            return None
+    elif scope_name == 'selection':
+        try:
+            print_selection = selection.drop(drop_list, axis=1)
+        except AttributeError:
+            raise_error('data_not_selected')
+            return None
+    else:
+        raise_error('unknown_subcall')
+        return None
+    print(print_selection)
+
+
+################################
+def _clear():
+    system(const['terminal_clear'])
+    print(const['program_header'])
+
+
+################################
+def _help():
+    print(__doc__)
+
+
+
+################################
+# MAIN SCRIPT
+################################
+def init():
+    global const
+    const = get_const() # src.meta
+    if const['preceding_blank_line']:
+        const['error_prefix'] = '\n' + const['error_prefix']
+        const['input_prefix'] = '\n' + const['input_prefix']
+    pd.set_option('display.max_rows', const['pandas_max_rows'])
+    pd.set_option('display.max_columns', const['pandas_max_cols'])
+    pd.set_option('display.width', const['pandas_disp_width'])
+    global alldata
+    alldata = None
+    global selection
     selection = None
-    while True:
-        call = input(settings['input_prefix']).split()
-        if len(call) == 0:
-            continue #Empty input
-        funcname = call[0]
-        if funcname in settings['legal_exit_calls']:
-            break
-        if funcname not in settings['legal_nonexit_calls']:
-            raise_error('illegal_call', False, [funcname])
-
-        ################################
-        # SUB-CALLS AND ARGUMENTS PARSING
-        ################################
-
-        if funcname in ['load', 'save']: #Filestream
-            try:
-                subcall = call[1]
-                directory = call[2]
-            except:
-                show_usage(funcname)
-                continue
-
-        if funcname in ['apply']: #No arguments needed
-            try:
-                subcall = call[1]
-                raise_error('too_many_arguments', False)
-                continue
-            except:
-                pass
-
-        if funcname in ['select', 'subselect', 'append', 'deselect', 'set']: #Attribute and Value
-            try:
-                attribute = call[1]
-                values = call[2:]
-            except:
-                show_usage(funcname)
-                continue
-            if type(values) != list:
-                try:
-                    values = [values]
-                except KeyError:
-                    continue
-                    #TODO: Explain: When using unknown attr pandas says there's error
-                    #NOTE: Copy of this is in interactive > print > mode : where/only
+    gamefiles.init(const)
 
 
-        ################################
-        # INTERACTIVE FUNCTIONS
-        ################################
-
+################################
+def loop():
+    # TODO: IndexError in this function is temporarily considered fatal
+    global alldata
+    cmnd = input(const['input_prefix']).split()
+    if len(cmnd) == 0:
+        return True
+    funcname = cmnd[0]
+    try:
+        args = cmnd[1:]# + [None, ]*(4-len(cmnd))
+    except IndexError:
+        pass
+    if funcname in const['legal_exit_calls']:
+        return False
+    if funcname not in const['legal_nonexit_calls']:
+        raise_error('illegal_call', data=funcname)
+    ################################
+    try:
         if funcname == 'load':
-            if subcall not in ['sheet', 'game']:
-                raise_error('unknown_subcall', False, [subcall])
-                continue
-            data = load(subcall, directory, 0)
-
-
+            alldata = _load(args[0], args[1])
         if funcname == 'save':
-            if subcall not in ['sheet', 'game']:
-                raise_error('unknown_subcall', False, [subcall])
-                continue
-            data = save(subcall, data, directory)
-
-
+            _save(args[0], args[1])
         if funcname == 'apply':
-            data.update(selection) #No possible errors found so far
-
-
-        if funcname in ['select', 'subselect']:
-            try:
-                if funcname == 'select':
-                    selection = data.loc[data[attribute].isin(values)]
-                if funcname == 'subselect':
-                    selection = selection.loc[data[attribute].isin(values)]
-            except (AttributeError, TypeError):
-                raise_error('data_not_loaded', False)
-            except KeyError:
-                raise_error('unknown_attribute', False, [attribute])
-
-
+            _apply()
+        if funcname == 'select':
+            _select('all', args[0], args[1:])
+        if funcname == 'subselect':
+            _select('selection', args[0], args[1:])
         if funcname == 'append':
-            try:
-                newsel = data.loc[data[attribute].isin(values)]
-                selection = pd.concat([selection, newsel])
-            except (AttributeError, TypeError):
-                raise_error('data_not_loaded', False)
-            except KeyError:
-                raise_error('unknown_attribute', False, [attribute])
-
-
+            _append(args[0], args[1:])
         if funcname == 'sort':
-            try:
-                scope = call[1]
-                attrlist = call[2:]
-            except:
-                raise_error('too_less_arguments', False, ['sort', 'scope', 'attributes'])
-                continue
-            if attrlist == ['location']:
-                attrlist = ['segion', 'region', 'area']
-            if scope == 'all':
-                try:
-                    data.sort_values(attrlist, inplace = True)
-                except AttributeError:
-                    raise_error('data_not_loaded', False)
-            elif scope == 'selection':
-                try:
-                    selection.sort_values(attrlist, inplace = True)
-                except AttributeError:
-                    raise_error('data_not_selected', False)
-            else: raise_error('unknown_subcall', False, [scope])
-
-
+            _sort(args[0], args[1:])
         if funcname == 'set':
-            selection.loc[:, attribute] = ' '.join(values)
-
-
-        if funcname == 'replace': #Separate argument parser
-            try:
-                oldvalue = call[1]
-                newvalue = call[2]
-            except:
-                show_usage(funcname)
-                continue
-            selection.replace(oldvalue, newvalue, inplace = True)
-            #TODO: Pandas Function takes no arg specifying which column should be affected
-
-
-        if funcname == 'inprov': #Separate argument parser
-            try:
-                provid = int(call[1])
-                attribute = call[2]
-                values = ' '.join(call[3:])
-            except:
-                show_usage(funcname)
-                continue
-            try:
-                selection.loc[provid, attribute] = values
-            except AttributeError:
-                raise_error('data_not_selected', False)
-            #NOTE: Pandas message about indexing and copying is displayed
-
-
-        if funcname == 'print': #Separate argument parser
-            mode = None
-            printwhere_has_args = False
-            try:
-                mode = call[1]
-                try:
-                    attribute = call[2]
-                    values = call[3:]
-                    printwhere_has_args = True
-                except: pass #Only required if mode is 'where' or 'only'
-            except: pass #Argument is optional
-            if mode == None:
-                print(selection)
-            elif mode == 'all':
-                print(data)
-            elif mode in ['where', 'only']:
-                if not printwhere_has_args:
-                    raise_error('too_less_arguments', False, ['print', 'where/only', 'attribute', 'values'])
-                try:
-                    if type(values) != list:
-                        try:
-                            values = [values]
-                        except KeyError:
-                            continue #NOTE
-                    if mode == 'where':
-                        psel = data.loc[data[attribute].isin(values)]
-                    if mode == 'only':
-                        psel = selection.loc[data[attribute].isin(values)]
-                    print(psel)
-                except (AttributeError, TypeError):
-                    raise_error('data_not_loaded', False)
-                    continue
-                except KeyError:
-                    raise_error('unknown_attribute', False, [attribute])
-                    continue
-            else:
-                raise_error('unknown_subcall', False, [mode])
-
-
+            _set(args[0], args[1:])
+        if funcname == 'inprov':
+            _inprov(int(args[0]), args[1], args[2:])
         if funcname == 'clear':
-            os.system(settings['term_clear'])
-            print(settings['program_header'])
-
-
+            _clear()
         if funcname == 'help':
-            print(__doc__)
+            _help()
+        if funcname == 'print':
+            try:
+                _print(args[0], args[1], args[2], args[3:])
+            except IndexError:
+                try:
+                    _print(args[0])
+                except IndexError:
+                    _print()
 
-
-
-################################
-# MAIN
-################################
-
-def apply_settings(settings):
-    if settings['preceding_blank_line']:
-        settings['error_prefix'] = '\n' + settings['error_prefix']
-        settings['input_prefix'] = '\n' + settings['input_prefix']
-    pd.set_option('display.max_rows', settings['pandas_max_rows'])
-    pd.set_option('display.max_columns', settings['pandas_max_cols'])
-    pd.set_option('display.width', settings['pandas_disp_width'])
+    except IndexError:
+        raise_error('too_less_arguments')
+        raise # TODO
     return True
 
+
+################################
 def main():
-    ################################
-    # INIT
-    global settings
-    settings = init_settings()
-    apply_settings(settings)
-    gamefiles.init(settings)
-    ################################
-    print(settings['program_header'])
-    interactive()
+    init()
+    print(const['program_header'])
+    while loop(): pass
 
 
+################################
 if __name__ == "__main__":
     try:
         main()

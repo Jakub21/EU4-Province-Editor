@@ -1,5 +1,5 @@
 from src.meta import raise_error
-from pandas import DataFrame
+from pandas import DataFrame, isnull
 from os import getcwd, listdir
 import yaml
 
@@ -9,11 +9,13 @@ import yaml
 
 ################################
 # INITIALISE SESSION
-def init(_settings):
-    global settings
-    settings = _settings
+def init(_const):
+    global const
+    const = _const
     global cwd
     cwd = getcwd()
+    global other_files
+    other_files = []
 
 ################################
 # LOAD FILE AND REMOVE COMMENTS
@@ -76,7 +78,7 @@ def merge_regions(segions, regions, areas):
         area_name = area
         region_name = region
         segion_name = segion
-        if settings['shorten_region_names']:
+        if const['shorten_region_names']:
             try:
                 if area_name.endswith('_area'):
                     area_name = area_name[:-5]
@@ -172,6 +174,8 @@ def getvalue(keys, data):
         q = []
         for sub in data[keys[0]]:
             q += getvalue(keys[1:], sub)
+        if q == 'nan':
+            q = ''
         return q
 
 ################################
@@ -201,8 +205,8 @@ def prepare_yaml(data):
 ################################
 # MAIN GAME FILE LOAD PROCEDURE
 def load(location):
-    sep = settings['dir_sep']
-    histdir = cwd + sep + location + sep + settings['history_subdir'] + sep
+    sep = const['dir_sep']
+    histdir = cwd + sep + location + sep + const['history_subdir'] + sep
     datadir = cwd + sep + location + sep
     ################################
     segions = getregions(getfile(datadir + 'superregion.txt').split()   , 1)
@@ -220,7 +224,7 @@ def load(location):
         except yaml.YAMLError as e:
             print(e)
             return
-    for lang in settings['lcl_languages']:
+    for lang in const['lcl_languages']:
         try:
             localisation = rlcl[lang]
             break
@@ -247,8 +251,8 @@ def load(location):
         province['area']        = regioning[provid][0]
         province['region']      = regioning[provid][1]
         province['segion']      = regioning[provid][2]
-        for datakey in settings['historyfile_keys']:
-            provkey = settings['historyfile_keys'][datakey]
+        for datakey in const['historyfile_keys']:
+            provkey = const['historyfile_keys'][datakey]
             if type(provkey) == list:
                 keys = provkey
             else:
@@ -260,16 +264,16 @@ def load(location):
             province[datakey] = value
         ################################
         row = []
-        for key in settings['column_order']:
+        for key in const['column_order']:
             value = province[key]
             #print(value)
             if type(value) == list:
-                row.append(settings['multival_sep'].join(value))
+                row.append(const['multival_sep'].join(value))
             else:
                 row.append(value)
         rows.append(row)
     ################################
-    df = DataFrame(rows, columns = settings['column_order'])
+    df = DataFrame(rows, columns = const['column_order'])
     df.set_index('id', inplace = True)
     return df
 
@@ -283,7 +287,9 @@ def load(location):
 def save(data, location):
     idlist = data.index.values
     data = data.values.tolist()
-    columns = settings['column_order'][1:] # 1st is ID and it is not in values so it should be excluded
+    columns = const['column_order'][1:] # 1st is ID and it is not in values so it should be excluded
+    sep = const['def_dir_sep']
+    histpath = cwd+sep+ location+sep+ const['history_subdir']+sep
     prov_index = 0
     for row in data:
         provid = idlist[prov_index]
@@ -292,14 +298,19 @@ def save(data, location):
         for i in range(len(columns)):
             cname = columns[i]
             value = row[i]
+            if (type(value) == float) and not(isnull(value)):
+                value = int(value)
+            value = str(value)
+            if value == 'nan':
+                continue
             if cname == 'filename':
                 filename = value
             try:
-                key = settings['historyfile_keys'][cname]
+                key = const['historyfile_keys'][cname]
             except KeyError:
                 continue # Element should not be saved (eg. Filename or ID)
-            if settings['multival_sep'] in value:
-                value = value.split(settings['multival_sep'])
+            if const['multival_sep'] in value:
+                value = value.split(const['multival_sep'])
             else:
                 value = [value]
             for element in value:
@@ -316,5 +327,4 @@ def save(data, location):
                     text += '    ' + 'duration = -1\n' #TODO
                     text += '}\n'
         prov_index += 1
-        sep = settings['def_dir_sep']
-        open(cwd+sep+ location+sep+ filename, 'w').write(text)
+        open(histpath + filename, 'w').write(text)

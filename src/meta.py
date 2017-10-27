@@ -1,9 +1,9 @@
 from platform import system as psys
 ################################
-# SESSION INIT
-def init_settings():
-    global settings
-    settings = {
+# SETTINGS AND CONSTANT VARIABLES
+def get_const():
+    global const
+    const = {
         'pandas_max_rows'       : 500,
         'pandas_max_cols'       : 50,
         'pandas_disp_width'     : 250,
@@ -25,7 +25,7 @@ def init_settings():
                 'apply',
                 'select', 'subselect', 'append',
                 'sort',
-                'set', 'replace', 'inprov',
+                'set', 'inprov',
                 'print', 'clear',
                 'help',
             ],
@@ -37,7 +37,7 @@ def init_settings():
             'cores'         : 'add_core',
             'claims'        : 'add_claim',
             'owner'         : 'owner',
-            'cntrl'         : 'controler',
+            'cntrl'         : 'controller',
             'culture'       : 'culture',
             'religion'      : 'religion',
             'hre'           : 'hre',
@@ -77,20 +77,26 @@ def init_settings():
             'discovered',
             'modifiers',
         ],
+        'drop_from_print'       : [
+            # Those will not be displayed when using _print()
+            'filename',
+            'discovered',
+            'modifiers',
+        ],
     }
     ################################
     # Platform-Related differences
     if psys() == 'Windows':
-        settings['dir_sep'] = '\\'
-        settings['term_clear'] = 'cls'
+        const['dir_sep'] = '\\'
+        const['terminal_clear'] = 'cls'
     else:
-        settings['dir_sep'] = '/'
-        settings['term_clear'] = 'clear'
+        const['dir_sep'] = '/'
+        const['terminal_clear'] = 'clear'
     ################################
-    if 'id' not in settings['column_order']:
+    if 'id' not in const['column_order']:
         raise_error('Column "id" is not in "column_order" list. Its presence there is necessary.',
             self_contents = True, fatal = True)
-    return settings
+    return const
 
 
 
@@ -98,11 +104,13 @@ def init_settings():
 # ERRORS HANDLING
 ################################
 def raise_error(error_type, fatal=False, data=['None'], self_contents = False):
+    if type(data) != list:
+        data = [data]
     try:
-        directory = settings['def_dir_sep'].join(data[0].split(settings['def_dir_sep'])[-3:])
+        directory = const['def_dir_sep'].join(data[0].split(const['def_dir_sep'])[-3:])
     except:
         pass
-    print(settings['error_prefix'], end = "")
+    print(const['error_prefix'], end = "")
     messages = {
         'illegal_call'          : 'Unrecognized function "'+data[0]+'"',
         'unknown_subcall'       : 'Unrecognized parameter "'+data[0]+'"',

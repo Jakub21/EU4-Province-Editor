@@ -1,13 +1,25 @@
 # Changelog
 
-### Separate Changelog
+### 9: Script Rewritten
 
 **Last on Master branch**
+- Rewritten script (callables are now functions)
+- Fixed typo in `meta.py` (controller)
+- When printing Data, unnecessary columns are dropped (changable in `const`)
+- Function `replace` was removed due to lack of possiblity to select column to operate in
+- Added ordinals to Changelog
+- When saving data, directories that don't exist are automaticly created
+- Variable `settings` was renamed to `const`
+
+
+
+### 8: Separate Changelog
+
 - Moved Changelog to separate file
 
 
 
-### Game Files Parser IV
+### 7: Game Files Parser IV
 
 - Program can now save game-like history files
 - Corrected usage of `type()` (It was used as method)
@@ -16,7 +28,7 @@
 
 
 
-### Game Files Parser III
+### 6: Game Files Parser III
 
 Branch-Related
 - Province ID is now set as index automaticly (if 'id' is not in columns list fatal error is raised)
@@ -28,7 +40,7 @@ Other Changes
 
 
 
-### Game Files Parser II
+### 5: Game Files Parser II
 
 Branch-Related
 - Parser for region files is now ready for use
@@ -47,7 +59,7 @@ There was situation where `gamefiles.py` was forced to import and then call funt
 
 
 
-### Game Files Parser I
+### 4: Game Files Parser I
 
 Branch-Related
 - Recursive parser for history files
@@ -61,7 +73,7 @@ Other Changes
 
 
 
-### Initial' Repair II
+### 3: Initial' Repair II
 
 - Using unknown attribute in `print` function with mode `only` is longer considered fatal error
 - Solved problems with loading CSV sheets encoded with UTF-8 BOM
@@ -70,7 +82,7 @@ Other Changes
 
 
 
-### Initial' Repair I
+### 2: Initial' Repair I
 
 - Functions `inprov` and `set` now work but Pandas error is displayed
 - Removed BOM converter because it did not work. Error is raised instead
@@ -81,7 +93,7 @@ Other Changes
 
 
 
-### Initial Commit
+### 1: Initial Commit
 
 - Initial version of program.
 - Lacks basic features and contains many bugs.
