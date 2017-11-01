@@ -1,41 +1,68 @@
 from platform import system as psys
+from os import getcwd
 ################################
 # SETTINGS AND CONSTANT VARIABLES
 def get_const():
     global const
     const = {
+        # Pandas Display
         'pandas_max_rows'       : 500,
         'pandas_max_cols'       : 50,
         'pandas_disp_width'     : 250,
-        'preceding_blank_line'  : False, # Blank line before every input and error message
-        'shorten_region_names'  : True,
-        'def_dir_sep'           : '/',
-        'multival_sep'          : '&',
-        'history_subdir'        : 'provinces', # With out directory separators
+        # Directories and Files
+        'dir_sep'               : '/',
+        'history_subdir'        : 'provinces',
+        'sprd_enc'              : 'utf-8-sig',
+        'locl_enc'              : 'utf-8-sig',
+        'all_encodings'         : ['utf-8', 'utf-8-sig'],
+        # Appearance
+        'preceding_blank_line'  : False,
         'error_prefix'          : '(Error) ',
         'input_prefix'          : '[Editor] > ',
         'program_header'        : 'EU4 Province Editor v0.1',
+        'drop_from_print'       : [
+            'filename',
+            'discovered',
+            'modifiers',
+        ],
+        # Value Related
+        'shorten_region_names'  : True,
+        'multival_sep'          : '&',
         'default_name'          : 'NoNameFound',
         'default_area'          : 'NoArea',
         'default_region'        : 'NoRegion',
         'default_segion'        : 'NoSegion',
-        'lcl_languages'         : [
-                # Language tags used in localisation files
-                'l_english', 'l_spanish', 'l_french', 'l_german',
+        # DataFrames / SpreadSheets
+        'index_column'          : 'id',
+        'auto_sort_by'          : ['segion', 'region', 'area', 'tax'],
+        'column_order'          : [
+            'id', 'name', 'capital',
+            'area', 'region', 'segion',
+            'cores', 'claims',
+            'owner', 'cntrl',
+            'culture', 'religion', 'hre',
+            'tax', 'prod', 'manp',
+            'trade_goods',
+            'city', 'cost', 'fort',
+            'discovered', 'modifiers',
+            'filename',
         ],
+        # Callables
         'legal_nonexit_calls'   : [
-                # If user calls func that isnt listed here an error is raised
-                'load', 'save',
-                'apply',
-                'select', 'subselect', 'append',
-                'sort',
-                'set', 'inprov',
-                'print', 'clear',
-                'help',
-            ],
+            'load', 'save',
+            'apply',
+            'select', 'subselect', 'append',
+            'sort',
+            'set', 'inprov',
+            'print', 'clear', 'help',
+        ],
         'legal_exit_calls'      : [
-                'exit', 'quit', 'leave'
-            ],
+            'exit', 'quit', 'leave'
+        ],
+        # Game Files
+        'lcl_languages'         : [
+            'l_english', 'l_spanish', 'l_french', 'l_german',
+        ],
         'historyfile_keys'      : {
             'capital'       : 'capital',
             'cores'         : 'add_core',
@@ -58,48 +85,20 @@ def get_const():
             'discovered'    : 'discovered_by',
             'modifiers'     : ['add_permanent_province_modifier', 'name'],
         },
-        #OTHER LEGAL KEYS BESIDES THOSE FROM HISTORY
-            # area, region, segion, id, filename, name
-        'column_order'          : [
-            #Keep 'ID' at 1st position
-            'id', 'name', 'area', 'region', 'segion', 'filename',
-            'capital',
-            'cores',
-            'claims',
-            'owner',
-            'cntrl',
-            'culture',
-            'religion',
-            'hre',
-            'tax',
-            'prod',
-            'manp',
-            'trade_goods',
-            'city',
-            'cost',
-            'fort',
-            'discovered',
-            'modifiers',
-        ],
-        'drop_from_print'       : [
-            # Those will not be displayed when using _print()
-            'filename',
-            'discovered',
-            'modifiers',
-        ],
     }
     ################################
-    # Platform-Related differences
+    # Variables
+    const['cwd'] = getcwd()
     if psys() == 'Windows':
-        const['dir_sep'] = '\\'
         const['terminal_clear'] = 'cls'
     else:
-        const['dir_sep'] = '/'
         const['terminal_clear'] = 'clear'
     ################################
-    if 'id' not in const['column_order']:
-        raise_error('Column "id" is not in "column_order" list. Its presence there is necessary.',
+    # Checking
+    if const['index_column'] not in const['column_order']:
+        raise_error('Column "'+const['index_column']+'" is not in "column_order" list. Its presence there is necessary.',
             self_contents = True, fatal = True)
+    ################################
     return const
 
 
@@ -111,7 +110,7 @@ def raise_error(error_type, fatal=False, data=['None'], self_contents = False):
     if type(data) != list:
         data = [data]
     try:
-        directory = const['def_dir_sep'].join(data[0].split(const['def_dir_sep'])[-3:])
+        directory = const['dir_sep'].join(data[0].split(const['dir_sep'])[-3:])
     except:
         pass
     print(const['error_prefix'], end = "")

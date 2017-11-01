@@ -1,8 +1,8 @@
 # EU4 Province Editor
 
 #### 0.1.0 Not released
-
-Jakub21, October 2017  
+Jakub21  
+Started in October 2017  
 Published and Developed on GitHub
 
 [Repository site][repo_link]
@@ -11,7 +11,7 @@ Published and Developed on GitHub
 
 ## Description
 
-Province Editor is a shell-styled program that allows easy edition of province history. User can change attributes in areas or regions with out need to look for files in long list. Program can generate spreadsheets with provinces' data or files ready to copy to mod.
+Province Editor is a shell-styled program based on Python Pandas that allows easy edition of province history. User can change attributes in areas or regions with out need to look for files in long list. Program can generate spreadsheets with provinces' data or files ready to copy to mod.
 
 
 
@@ -25,7 +25,7 @@ PyYAML package (v3.12)
 ## More info
 
 [*Changelog*][changelog_link]  
--insert-usage-link-here-
+Usage link will be here
 
 ## Usage
 Usage info was removed from this ReadMe and will be soon uploaded in separate file
@@ -34,6 +34,8 @@ Usage info was removed from this ReadMe and will be soon uploaded in separate fi
 ## Ideas and Todos
 - Allow reversed sorting of numeral columns
 - Pandas' warning messages (`sort` and `inprov`)
+- Selective print of data
+- Function `drop` that removes rows
 
 
 

@@ -1,8 +1,13 @@
 # Changelog
 
-### 12: Auto Apply
-
+### 13: Auto Sort
 **Last on Master branch**
+- Data is now automaticly sorted (by location) after it's loaded
+- Settings in `const` were grouped for easier access
+- Console working directory is only checked at launch
+
+
+### 12: Auto Apply
 - When changing selection changes are saved automaticly
 - If province is not assigned to a area/region/s-region a default value is inserted
 - If province lacks localisation a default value is inserted
@@ -17,7 +22,6 @@
 
 
 ### 10: Script Rewritten
-
 - Rewritten script (callables are now functions)
 - Fixed typo in `meta.py` (controller)
 - When printing Data, unnecessary columns are dropped (changable in `const`)
@@ -29,19 +33,16 @@
 
 
 ### 9: Separate Changelog
-
 - Moved Changelog to separate file
 
 
 
 ### 8: Merge Game-Files-Parser
-
 - Merged Branch
 
 
 
 ### 7: Game Files Parser IV
-
 - Program can now save game-like history files
 - Corrected usage of `type()` (It was used as method)
 - Changed which attributes are loaded by default  
@@ -50,7 +51,6 @@
 
 
 ### 6: Game Files Parser III
-
 Branch-Related
 - Province ID is now set as index automaticly (if 'id' is not in columns list fatal error is raised)
 - Every error found in procedure of Loading Game Files was repaired.
@@ -62,7 +62,6 @@ Other Changes
 
 
 ### 5: Game Files Parser II
-
 Branch-Related
 - Parser for region files is now ready for use
 - Solved problems with YAML parser (Numbers that followed colons and encoding)
@@ -81,7 +80,6 @@ There was situation where `gamefiles.py` was forced to import and then call funt
 
 
 ### 4: Game Files Parser I
-
 Branch-Related
 - Recursive parser for history files
 - Using yaml package to load localisation
@@ -95,7 +93,6 @@ Other Changes
 
 
 ### 3: Initial' Repair II
-
 - Using unknown attribute in `print` function with mode `only` is longer considered fatal error
 - Solved problems with loading CSV sheets encoded with UTF-8 BOM
 - Default encoding when saving CSV sheets is now UTF-8 BOM (Spreadsheet programs default)
@@ -104,7 +101,6 @@ Other Changes
 
 
 ### 2: Initial' Repair I
-
 - Functions `inprov` and `set` now work but Pandas error is displayed
 - Removed BOM converter because it did not work. Error is raised instead
 - Optimized argument parsing in interactive functions (less code)
@@ -115,7 +111,6 @@ Other Changes
 
 
 ### 1: Initial Commit
-
 - Initial version of program.
 - Lacks basic features and contains many bugs.
 - Files can not be loaded from GameFiles

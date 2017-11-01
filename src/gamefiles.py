@@ -1,6 +1,6 @@
 from src.meta import raise_error
 from pandas import DataFrame, isnull
-from os import getcwd, listdir
+from os import listdir
 import yaml
 
 ################################################################
@@ -13,7 +13,7 @@ def init(_const):
     global const
     const = _const
     global cwd
-    cwd = getcwd()
+    cwd = const['cwd']
     global other_files
     other_files = []
 
@@ -217,7 +217,7 @@ def load(location):
     regioning = merge_regions(segions, regions, areas)
     ################################
     localisation = {}
-    with open(datadir + 'localisation.yml', 'r', encoding = 'utf-8-sig') as stream:
+    with open(datadir + 'localisation.yml', 'r', encoding = const['locl_enc']) as stream:
         content = prepare_yaml(stream.read())
         try:
             rlcl = yaml.load(content) # Whole Yaml file loaded to dict
@@ -300,7 +300,7 @@ def save(data, location):
     idlist = data.index.values
     data = data.values.tolist()
     columns = const['column_order'][1:] # 1st is ID and it is not in values so it should be excluded
-    sep = const['def_dir_sep']
+    sep = const['dir_sep']
     histpath = cwd+sep+ location+sep+ const['history_subdir']+sep
     prov_index = 0
     for row in data:

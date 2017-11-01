@@ -29,23 +29,24 @@ from os import system, makedirs, path
 # DATA MANIPULATION
 ################################
 def _load(filetype, location):
-    encodings = ['utf-8', 'utf-8-sig']
+    encodings = const['all_encodings']
     if filetype == 'sheet':
         try:
             for encoding in encodings:
-                alldata = pd.read_csv(location, encoding = encoding)
-                alldata.set_index('id', inplace = True)
-                return alldata
+                data = pd.read_csv(location, encoding = encoding)
+                data.set_index(const['index_column'], inplace = True)
         except (FileNotFoundError, PermissionError):
             raise_error('filestream_error', data=location)
             return None
         except UnicodeDecodeError:
             pass
     elif filetype == 'game':
-        return gamefiles.load(location)
+        data = gamefiles.load(location)
     else:
         raise_error('unknown_subcall')
         return None
+    data.sort_values(const['auto_sort_by'], inplace=True)
+    return data
 
 
 ################################
@@ -53,9 +54,9 @@ def _save(filetype, location):
     #if not path.exists(location):
     #    makedirs(location)
     if filetype == 'sheet':
-        alldata.to_csv(location, encoding = 'utf-8-sig')
+        alldata.to_csv(location, encoding = const['sprd_enc'])
     elif filetype == 'game':
-        history_path = location+const['def_dir_sep']+const['history_subdir']
+        history_path = location+const['dir_sep']+const['history_subdir']
         if not path.exists(history_path):
             makedirs(history_path)
         gamefiles.save(alldata, location)
