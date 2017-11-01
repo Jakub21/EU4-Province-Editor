@@ -1,8 +1,23 @@
 # Changelog
 
-### 9: Script Rewritten
+### 12: Auto Apply
 
 **Last on Master branch**
+- When changing selection changes are saved automaticly
+- If province is not assigned to a area/region/s-region a default value is inserted
+- If province lacks localisation a default value is inserted
+- Removed usage from ReadMe but it will be uploaded in separate file soon
+- When creating spreadsheet a directory with sheet name is no longer disallowing creation of actual sheet (this also disabled auto-creation of directories when creating game files which will be repaired in next commit)
+
+
+
+### 11: License
+- Added license (MIT)
+
+
+
+### 10: Script Rewritten
+
 - Rewritten script (callables are now functions)
 - Fixed typo in `meta.py` (controller)
 - When printing Data, unnecessary columns are dropped (changable in `const`)
@@ -13,9 +28,15 @@
 
 
 
-### 8: Separate Changelog
+### 9: Separate Changelog
 
 - Moved Changelog to separate file
+
+
+
+### 8: Merge Game-Files-Parser
+
+- Merged Branch
 
 
 

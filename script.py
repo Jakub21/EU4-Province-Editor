@@ -12,7 +12,7 @@ github.com/Jakub21/EU4-Province-Editor
 --------------------------------
 Province Editor is a shell-styled program that allows easy edition of province history.
 User can change attributes in areas or regions with out need to look for files in long list.
-Program can generate spreadsheets with provinces' data or files that are ready to copy to mod.
+Program can generate spreadsheets with provinces' data or files ready to copy to mod.
 --------------------------------
 '''
 
@@ -50,8 +50,8 @@ def _load(filetype, location):
 
 ################################
 def _save(filetype, location):
-    if not path.exists(location):
-        makedirs(location)
+    #if not path.exists(location):
+    #    makedirs(location)
     if filetype == 'sheet':
         alldata.to_csv(location, encoding = 'utf-8-sig')
     elif filetype == 'game':
@@ -69,6 +69,7 @@ def _apply():
 ################################
 def _select(_from, attribute, values):
     global selection
+    _apply()
     try:
         if _from == 'all':
             selection = alldata.loc[alldata[attribute].isin(values)]

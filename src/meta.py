@@ -15,6 +15,10 @@ def get_const():
         'error_prefix'          : '(Error) ',
         'input_prefix'          : '[Editor] > ',
         'program_header'        : 'EU4 Province Editor v0.1',
+        'default_name'          : 'NoNameFound',
+        'default_area'          : 'NoArea',
+        'default_region'        : 'NoRegion',
+        'default_segion'        : 'NoSegion',
         'lcl_languages'         : [
                 # Language tags used in localisation files
                 'l_english', 'l_spanish', 'l_french', 'l_german',

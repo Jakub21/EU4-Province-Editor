@@ -247,10 +247,22 @@ def load(location):
             continue
         province['id']          = int(provid)
         province['filename']    = filename
-        province['name']        = localisation['PROV'+provid]
-        province['area']        = regioning[provid][0]
-        province['region']      = regioning[provid][1]
-        province['segion']      = regioning[provid][2]
+        try:
+            province['name']        = localisation['PROV'+provid]
+        except KeyError:
+            province['name']        = const['default_name']
+        try:
+            province['area']        = regioning[provid][0]
+        except KeyError:
+            province['area'] = const['default_area']
+        try:
+            province['region']      = regioning[provid][1]
+        except KeyError:
+            province['region'] = const['default_region']
+        try:
+            province['segion']      = regioning[provid][2]
+        except KeyError:
+            province['segion'] = const['default_segion']
         for datakey in const['historyfile_keys']:
             provkey = const['historyfile_keys'][datakey]
             if type(provkey) == list:
