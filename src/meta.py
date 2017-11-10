@@ -9,11 +9,20 @@ def get_const():
         'pandas_max_rows'       : 500,
         'pandas_max_cols'       : 50,
         'pandas_disp_width'     : 250,
-        # Directories and Files
+        # Directories
         'dir_sep'               : '/',
-        'history_subdir'        : 'provinces',
+        'data_subdir'           : 'data',
+        'attr_subdir'           : 'attributes',
+        'fnames'                : {
+            'segion'        : 'superregion.txt',
+            'region'        : 'region.txt',
+            'area'          : 'area.txt',
+            'provloc'       : 'localisation.yml',
+        },
+        # Encodings
         'sprd_enc'              : 'utf-8-sig',
         'locl_enc'              : 'utf-8-sig',
+        'hist_enc'              : 'utf-8-sig',
         'all_encodings'         : ['utf-8', 'utf-8-sig'],
         # Appearance
         'preceding_blank_line'  : False,
@@ -50,7 +59,7 @@ def get_const():
         # Callables
         'legal_nonexit_calls'   : [
             'load', 'save',
-            'apply',
+            'apply', 'operate_on',
             'select', 'subselect', 'append',
             'sort',
             'set', 'inprov',
@@ -59,10 +68,22 @@ def get_const():
         'legal_exit_calls'      : [
             'exit', 'quit', 'leave'
         ],
-        # Game Files
+        # Localisation
+        'locl_key_prefix'   : 'PROV',
         'lcl_languages'         : [
             'l_english', 'l_spanish', 'l_french', 'l_german',
         ],
+        # Region files
+        'none'                  : 'none',
+        'skip_at_region_load'   : '{=}colorareas',
+        'regioning_names_suffiexes' : {
+            'area'          : '_area',
+            'region'        : '_region',
+            'segion'        : '_superregion',
+        },
+        # Province Files
+        'indent'                : ' '*4,
+        'skip_save_atvalue'     : ['nan', 'no', '0', 'none'], # Case insensitive
         'historyfile_keys'      : {
             'capital'       : 'capital',
             'cores'         : 'add_core',
@@ -85,19 +106,23 @@ def get_const():
             'discovered'    : 'discovered_by',
             'modifiers'     : ['add_permanent_province_modifier', 'name'],
         },
-    }
+        'additional_save_info'  : {
+            # Data that stays always the same in provinces
+            # And is not loaded into Data Frames
+            'add_permanent_province_modifier'   : 'duration = -1',
+        },
+    } # Endof Const
     ################################
-    # Variables
-    const['cwd'] = getcwd()
+    # Dependends
+    cwd = getcwd() + const['dir_sep']
+    bck = '\\'
+    if bck in cwd:
+        cwd = const['dir_sep'].join(cwd.split(bck))
+    const['cwd'] = cwd
     if psys() == 'Windows':
         const['terminal_clear'] = 'cls'
     else:
         const['terminal_clear'] = 'clear'
-    ################################
-    # Checking
-    if const['index_column'] not in const['column_order']:
-        raise_error('Column "'+const['index_column']+'" is not in "column_order" list. Its presence there is necessary.',
-            self_contents = True, fatal = True)
     ################################
     return const
 
@@ -124,7 +149,9 @@ def raise_error(error_type, fatal=False, data=['None'], self_contents = False):
         'unknown_attribute'     : 'Unrecognized column name "'+data[0]+'"',
         'filestream_error'      : 'File "'+ directory +'" does not exist or the permission was denied',
         'nolocalisation_error'  : 'Localisation could not be loaded. Check files and language tags',
+        'attrfile_error'        : 'Required Attribute file ('+directory+') was not found or permission was denied. Check Usage.md or type "help" for list of Attribute files',
         'hparser_equal_sign'    : 'Syntax error in file ' +directory,
+        'empty_reg_file'        : 'File with regioning data is empty or contains syntax error',
         'unknown_fstr_error'    : 'Unknown error occured when file "'+directory+'" was loaded',     # unused
         'encoding_bom_error'    : 'Loaded file uses encoding with BOM and can not be loaded',       # unused
     }

@@ -14,6 +14,17 @@ Province Editor is a shell-styled program that allows easy edition of province h
 User can change attributes in areas or regions with out need to look for files in long list.
 Program can generate spreadsheets with provinces' data or files ready to copy to mod.
 --------------------------------
+Summary of directories info
+Repository/
+    attributes/         folder with regioning and localisation files
+        area.txt
+        region.txt
+        superregion.txt
+    data/
+        any/            folder with prov hist files. Use its name when loading files
+        sheets          spreadsheets in csv format
+    script.py           executable file
+--------------------------------
 '''
 
 
@@ -24,47 +35,64 @@ import pandas as pd
 from os import system, makedirs, path
 
 
-
 ################################
 # DATA MANIPULATION
 ################################
 def _load(filetype, location):
+    sep = const['dir_sep']
+    data_directory = const['cwd'] + const['data_subdir'] + sep
+    attr_directory = const['cwd'] + const['attr_subdir'] + sep
+    location = data_directory + location
     encodings = const['all_encodings']
     if filetype == 'sheet':
-        try:
-            for encoding in encodings:
+        for encoding in encodings:
+            try:
                 data = pd.read_csv(location, encoding = encoding)
-                data.set_index(const['index_column'], inplace = True)
-        except (FileNotFoundError, PermissionError):
-            raise_error('filestream_error', data=location)
-            return None
-        except UnicodeDecodeError:
-            pass
+                data.set_index(const['index_column'], inplace=True)
+            except (FileNotFoundError, PermissionError):
+                raise_error('filestream_error', data=location)
+                return
+            except UnicodeDecodeError:
+                pass
     elif filetype == 'game':
-        data = gamefiles.load(location)
+        data = gamefiles.load(location+sep, attr_directory)
+        if data.empty:
+            print('ScriptLoad:', 'GameLoader returned empty DF')
+            return
     else:
         raise_error('unknown_subcall')
-        return None
+        return
     data.sort_values(const['auto_sort_by'], inplace=True)
     return data
 
 
 ################################
+def _mkdir(directory):
+    if not path.exists(directory):
+        makedirs(directory)
+################################
 def _save(filetype, location):
-    #if not path.exists(location):
-    #    makedirs(location)
+    sep = const['dir_sep']
+    data_directory = const['cwd'] + const['data_subdir'] + sep
+    location = data_directory + location # No Separator
+    sheet_dir = sep.join(location.split(sep)[:-1]) # No filename
     if filetype == 'sheet':
-        alldata.to_csv(location, encoding = const['sprd_enc'])
+        _mkdir(sheet_dir)
+        alldata.to_csv(location, encoding=const['sprd_enc'])
     elif filetype == 'game':
-        history_path = location+const['dir_sep']+const['history_subdir']
-        if not path.exists(history_path):
-            makedirs(history_path)
-        gamefiles.save(alldata, location)
+        _mkdir(location)
+        gamefiles.save(alldata, location+sep)
 
 
 ################################
 def _apply():
     alldata.update(selection)
+
+
+################################
+def _operate_on():
+    global alldata
+    alldata = selection
 
 
 ################################
@@ -78,10 +106,10 @@ def _select(_from, attribute, values):
             selection = selection.loc[selection[attribute].isin(values)]
     except (AttributeError, TypeError):
         raise_error('data_not_loaded')
-        return None
+        return
     except KeyError:
         raise_error('unknown_attribute', data=attribute)
-        return None
+        return
 
 
 ################################
@@ -92,10 +120,10 @@ def _append(attribute, values):
         selection = pd.concat([selection, new_selection])
     except (AttributeError, TypeError):
         raise_error('data_not_loaded')
-        return None
+        return
     except KeyError:
         raise_error('unknown_attribute', data=attribute)
-        return None
+        return
 
 
 ################################
@@ -105,16 +133,16 @@ def _sort(scope_name, sort_by):
             alldata.sort_values(sort_by, inplace=True)
         except AttributeError:
             raise_error('data_not_loaded')
-            return None
+            return
     elif scope_name == 'selection':
         try:
             selection.sort_values(sort_by, inplace=True)
         except AttributeError:
             raise_error('data_not_selected', False)
-            return None
+            return
     else:
         raise_error('unknown_subcall', data=scope_name)
-        return None
+        return
 
 
 ################################
@@ -127,7 +155,7 @@ def _set(attribute, value):
         selection.loc[:, attribute] = value
     except AttributeError:
         raise_error('data_not_selected')
-        return None
+        return
 
 
 ################################
@@ -140,7 +168,7 @@ def _inprov(provid, attribute, value):
         selection.loc[provid, attribute] = value
     except AttributeError:
         raise_error('data_not_selected')
-        return None
+        return
 
 
 ################################
@@ -154,16 +182,16 @@ def _print(scope_name='selection', mode='full', attribute='', values=[]):
             print_selection = alldata.drop(drop_list, axis=1)
         except AttributeError:
             raise_error('data_not_loaded')
-            return None
+            return
     elif scope_name == 'selection':
         try:
             print_selection = selection.drop(drop_list, axis=1)
         except AttributeError:
             raise_error('data_not_selected')
-            return None
+            return
     else:
         raise_error('unknown_subcall')
-        return None
+        return
     print(print_selection)
 
 
@@ -195,7 +223,7 @@ def init():
     alldata = None
     global selection
     selection = None
-    gamefiles.init(const)
+    gamefiles._init(const)
 
 
 ################################
@@ -222,6 +250,8 @@ def loop():
             _save(args[0], args[1])
         if funcname == 'apply':
             _apply()
+        if funcname == 'operate_on':
+            _operate_on()
         if funcname == 'select':
             _select('all', args[0], args[1:])
         if funcname == 'subselect':

@@ -1,10 +1,24 @@
 # Changelog
 
-### 13: Auto Sort
+### 14: Standarize Directory Tree
 **Last on Master branch**
+- Standarization of directories in program. Always use separator `/`
+- When saving files required directories are created by program (Now properly)
+- Regions data and localisation will always be loaded from `project/attributes`
+- Provinces data will always be loaded from `project/data`  
+    (Command `load game my_folder` will load files from `project/data/my_folder`  
+    and `load sheet my_sheet.csv` will load file `project/data/my_sheet.csv`)  
+- Added function `operate_on`. Switches main data to selection (Drop everything outside of it).
+- Changes in `gamefiles.py`. File is not a bit easier to read
+- It is no longer necessary for `ID` Column to be listed at 1st position in `column_order` list
+
+
+
+### 13: Auto Sort
 - Data is now automaticly sorted (by location) after it's loaded
 - Settings in `const` were grouped for easier access
 - Console working directory is only checked at launch
+
 
 
 ### 12: Auto Apply
