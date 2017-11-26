@@ -14,35 +14,46 @@ def _init(_const):
 
 ################################
 # Load file and remove comments
-def getfile(fdir):
+def getfile(fpath):
+    ################
+    def rem_cmnt(text):
+        ndata = ''
+        for line in text.split('\n'):
+            nline = ''
+            for c in line:
+                if c in '#\r\n':
+                    break
+                if c == '\t':
+                    c = ' '
+                if c in '{=}':
+                    c = ' ' + c + ' '
+                nline += c
+            ndata += nline + ' '
+        return ndata
+    ################
     try:
-        data = open(fdir).read().split('\n')
+        enc = const['histload_prim_enc']
+        text = open(fpath, encoding=enc).read()
+    except UnicodeDecodeError:
+        enc = const['histload_secn_enc']
+        text = open(fpath, encoding=enc).read()
     except FileNotFoundError:
         raise_error('filestream_error', data=fdir)
         return
-    ndata = ''
-    for line in data:
-        nline = ''
-        for c in line:
-            if c in '#\r\n':
-                break
-            if c == '\t':
-                c = ' '
-            if c in '{=}':
-                c = ' ' + c + ' '
-            nline += c
-        ndata += nline + ' '
-    return ndata
+    text = rem_cmnt(text)
+    return text
 
 
 ################################
-def getscope(data, recdepth=0):
-    key_index   = 1
-    val_index   = 0
-    eqs_index   = 2
-    index       = 1
-    total_index = 0
+def getscope(data, rcr_depth=0):
+    key_index   = 0
+    eqs_index   = 1
+    val_index   = 2
+    index       = 0     # Base index correction
+    rcr_index   = 0     # InDepth index correction
+    ssc_cuthead = 1     # How many words remove from subscope head
     depth       = 0
+    total_index = 0
     key         = const['none']
     value       = ''
     inquotes    = False
@@ -55,6 +66,9 @@ def getscope(data, recdepth=0):
     ################
     result = {}
     subscope = []
+    ################
+    if rcr_depth > 0:
+        index = rcr_index
     ################
     for word in data:
         last = False
@@ -89,7 +103,7 @@ def getscope(data, recdepth=0):
             key = word
         elif index == eqs_index:
             if word != eqs:
-                return
+                return total_index
         elif index == val_index:
             if not last:
                 value = word
@@ -97,11 +111,10 @@ def getscope(data, recdepth=0):
                 continue
             ################
             if value == cbr:
-                subscope = subscope[1:]
-                try:
-                    value = getscope(subscope, recdepth+1)
-                except TypeError:
-                    return
+                index = (index+1)%3
+                subscope = subscope[ssc_cuthead:]
+                value = getscope(subscope, rcr_depth+1)
+                continue
             try:
                 result[key].append(value)
             except KeyError:
@@ -249,12 +262,12 @@ def load(histdir, attrdir):
     try:
         filelist = listdir(histdir)
     except FileNotFoundError:
-        raise_error('filestream_error')
+        raise_error('no_directory_error')
         return DataFrame
     for filename in filelist:
         filedir = histdir + filename
         data = getscope(getfile(filedir).split())
-        if type(data) == None:
+        if type(data) == int:
             raise_error('hparser_equal_sign', data=filedir)
             return DataFrame
         ################
@@ -328,8 +341,13 @@ def save(data, histdir):
     columns.remove(const['index_column'])
     sep = const['dir_sep']
     prov_index = 0
+    total_provs = len(data)
     ################
     for row in data:
+        if const['show_save_toggle']:
+            if prov_index % const['show_save_freq'] == 0:
+                percentage = str(round((prov_index/total_provs)*100))
+                print(const['show_save_msg']+percentage+'%')
         provid = idlist[prov_index]
         text = '#Province no.'+ str(provid) + '\n'*2
         filename = ''
@@ -359,6 +377,8 @@ def save(data, histdir):
                     continue
                 text += _saveline(key, element, len(key)-1, 0)
         filedir = histdir + filename
-        open(filedir, 'w', encoding=const['hist_enc']).write(text)
+        open(filedir, 'w', encoding=const['histsave_enc']).write(text)
         prov_index += 1
+    if const['show_save_toggle']:
+        print('Done.')
     return True

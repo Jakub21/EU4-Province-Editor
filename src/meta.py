@@ -20,12 +20,17 @@ def get_const():
             'provloc'       : 'localisation.yml',
         },
         # Encodings
-        'sprd_enc'              : 'utf-8-sig',
-        'locl_enc'              : 'utf-8-sig',
-        'hist_enc'              : 'utf-8-sig',
-        'all_encodings'         : ['utf-8', 'utf-8-sig'],
+        'histload_prim_enc'     : 'utf-8',          # Try to load history...
+        'histload_secn_enc'     : 'ansi',           # ... and use this if 1st coulndt do it
+        'histsave_enc'          : 'utf-8',          # Always save history in this encoding
+        'sprd_enc'              : 'utf-8-sig',      # Spreadsheets
+        'locl_enc'              : 'utf-8-sig',      # Localisation
+        'all_encodings'         : ['ansi', 'utf-8', 'utf-8-sig'],
         # Appearance
         'preceding_blank_line'  : False,
+        'show_save_toggle'      : True,
+        'show_save_freq'        : 350,              # Message every _ provinces saved
+        'show_save_msg'         : 'Progress: ',
         'error_prefix'          : '(Error) ',
         'input_prefix'          : '[Editor] > ',
         'program_header'        : 'EU4 Province Editor v0.1',
@@ -56,7 +61,7 @@ def get_const():
             'discovered', 'modifiers',
             'filename',
         ],
-        # Callables
+        # User's functions
         'legal_nonexit_calls'   : [
             'load', 'save',
             'apply', 'operate_on',
@@ -83,7 +88,7 @@ def get_const():
         },
         # Province Files
         'indent'                : ' '*4,
-        'skip_save_atvalue'     : ['nan', 'no', '0', 'none'], # Case insensitive
+        'skip_save_atvalue'     : ['nan', 'no', '0', 'none'], # lowercase
         'historyfile_keys'      : {
             'capital'       : 'capital',
             'cores'         : 'add_core',
@@ -107,8 +112,7 @@ def get_const():
             'modifiers'     : ['add_permanent_province_modifier', 'name'],
         },
         'additional_save_info'  : {
-            # Data that stays always the same in provinces
-            # And is not loaded into Data Frames
+            # Lines added to every scope with specified name
             'add_permanent_province_modifier'   : 'duration = -1',
         },
     } # Endof Const
@@ -148,12 +152,11 @@ def raise_error(error_type, fatal=False, data=['None'], self_contents = False):
         'data_not_selected'     : 'No data was selected',
         'unknown_attribute'     : 'Unrecognized column name "'+data[0]+'"',
         'filestream_error'      : 'File "'+ directory +'" does not exist or the permission was denied',
+        'no_directory_error'    : 'Selected directory does not exist.',
         'nolocalisation_error'  : 'Localisation could not be loaded. Check files and language tags',
         'attrfile_error'        : 'Required Attribute file ('+directory+') was not found or permission was denied. Check Usage.md or type "help" for list of Attribute files',
-        'hparser_equal_sign'    : 'Syntax error in file ' +directory,
+        'hparser_equal_sign'    : 'Syntax error in file ' + directory,
         'empty_reg_file'        : 'File with regioning data is empty or contains syntax error',
-        'unknown_fstr_error'    : 'Unknown error occured when file "'+directory+'" was loaded',     # unused
-        'encoding_bom_error'    : 'Loaded file uses encoding with BOM and can not be loaded',       # unused
     }
     if self_contents:
         print(error_type)

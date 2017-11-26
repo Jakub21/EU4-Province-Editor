@@ -1,8 +1,17 @@
 # Changelog
 
-### 14: Standarize Directory Tree
+### 15: Game-files loader fix
 **Last on Master branch**
-- Standarization of directories in program. Always use separator `/`
+- Fixed typos in changelog
+- Fixed game files load procedure
+- Fixed encoding problems
+- Added progress info in game files save procedure
+- When user choses directory that does not exist, a no-directory error is raised instead of file-stream-error
+
+
+
+### 14: Standardize Directory Tree
+- Standardization of directories in program. Always use separator `/`
 - When saving files required directories are created by program (Now properly)
 - Regions data and localisation will always be loaded from `project/attributes`
 - Provinces data will always be loaded from `project/data`  
@@ -15,14 +24,14 @@
 
 
 ### 13: Auto Sort
-- Data is now automaticly sorted (by location) after it's loaded
+- Data is now automatically sorted (by location) after it's loaded
 - Settings in `const` were grouped for easier access
 - Console working directory is only checked at launch
 
 
 
 ### 12: Auto Apply
-- When changing selection changes are saved automaticly
+- When changing selection changes are saved automatically
 - If province is not assigned to a area/region/s-region a default value is inserted
 - If province lacks localisation a default value is inserted
 - Removed usage from ReadMe but it will be uploaded in separate file soon
@@ -36,12 +45,12 @@
 
 
 ### 10: Script Rewritten
-- Rewritten script (callables are now functions)
+- Rewritten script (callable functions are now functions)
 - Fixed typo in `meta.py` (controller)
-- When printing Data, unnecessary columns are dropped (changable in `const`)
-- Function `replace` was removed due to lack of possiblity to select column to operate in
+- When printing Data, unnecessary columns are dropped (changeable in `const`)
+- Function `replace` was removed due to lack of possibility to select column to operate in
 - Added ordinals to Changelog
-- When saving data, directories that don't exist are automaticly created
+- When saving data, directories that don't exist are automatically created
 - Variable `settings` was renamed to `const`
 
 
@@ -66,7 +75,7 @@
 
 ### 6: Game Files Parser III
 Branch-Related
-- Province ID is now set as index automaticly (if 'id' is not in columns list fatal error is raised)
+- Province ID is now set as index automatically (if 'id' is not in columns list fatal error is raised)
 - Every error found in procedure of Loading Game Files was repaired.
 
 Other Changes
@@ -89,7 +98,7 @@ Other Changes
 
 Creation of file `src/meta.py`:
 
-There was situation where `gamefiles.py` was forced to import and then call funtion (`script.raise_error()`) from `script.py`. This probably should not happen so the function was moved to `meta.py`. Then the settings were moved here as well. It was 2nd source file so `src` subdirectory was created.
+There was situation where `gamefiles.py` was forced to import and then call function (`script.raise_error()`) from `script.py`. This probably should not happen so the function was moved to `meta.py`. Then the settings were moved here as well. It was 2nd source file so `src` subdirectory was created.
 
 
 
@@ -127,4 +136,4 @@ Other Changes
 ### 1: Initial Commit
 - Initial version of program.
 - Lacks basic features and contains many bugs.
-- Files can not be loaded from GameFiles
+- Files can not be loaded from Game-files
