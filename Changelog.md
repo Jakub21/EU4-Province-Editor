@@ -1,7 +1,17 @@
 # Changelog
 
-### 16: Errors handling
+### 17: Hidden warnings
 **Last on Master branch**
+- Pandas warnings are now hidden (warnings can be re-enabled in `meta.py`)
+- Another update of encodings. Probably a final one (tested in-game)
+- Basic directories info moved from `script.py` to a readme file
+
+- **In previous commit**  
+A new column `group` was added. Column is empty when data is generated. User can assign any value here. This allows to "save" lists of provinces so they can be re-selected later. Groups data is saved to sheets but not to game files.
+
+
+
+### 16: Errors handling
 - It is now possible to check basic info about data with `print info` (will be developed later)
 - When selecting provinces, if a column that does not exist was used, an error is raised
 - Program no longer crashes when argument `id` of function `inprov` is not a number.

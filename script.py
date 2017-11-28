@@ -14,23 +14,13 @@ Province Editor is a shell-styled program that allows easy edition of province h
 User can change attributes in areas or regions with out need to look for files in long list.
 Program can generate spreadsheets with provinces' data or files ready to copy to mod.
 --------------------------------
-Summary of directories info
-Repository/
-    attributes/         folder with regioning and localisation files
-        area.txt
-        region.txt
-        superregion.txt
-    data/
-        any/            folder with prov hist files. Use its name when loading files
-        sheets          spreadsheets in csv format
-    script.py           executable file
---------------------------------
 '''
 
 
 ################################
 import src.gamefiles as gamefiles
 from src.meta import err_msg, get_const
+from warnings import filterwarnings
 import pandas as pd
 from os import system, makedirs, path
 
@@ -276,6 +266,8 @@ def init():
     pd.set_option('display.max_rows', const['pandas_max_rows'])
     pd.set_option('display.max_columns', const['pandas_max_cols'])
     pd.set_option('display.width', const['pandas_disp_width'])
+    if const['pandas_hide_warnings']:
+        filterwarnings('ignore')
     global alldata
     alldata = None
     global selection

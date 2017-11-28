@@ -9,6 +9,7 @@ def get_const():
         'pandas_max_rows'       : 500,
         'pandas_max_cols'       : 50,
         'pandas_disp_width'     : 250,
+        'pandas_hide_warnings'  : True,
         # Directories
         'dir_sep'               : '/',
         'data_subdir'           : 'data',
@@ -22,7 +23,7 @@ def get_const():
         # Encodings
         'histload_prim_enc'     : 'utf-8',          # Try to load history...
         'histload_secn_enc'     : 'ansi',           # ... and use this if 1st coulndt do it
-        'histsave_enc'          : 'utf-8',          # Always save history in this encoding
+        'histsave_enc'          : 'ansi',           # Always save history in this encoding
         'sprd_enc'              : 'utf-8-sig',      # Spreadsheets
         'locl_enc'              : 'utf-8-sig',      # Localisation
         'all_encodings'         : ['ansi', 'utf-8', 'utf-8-sig'],

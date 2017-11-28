@@ -31,6 +31,20 @@ Usage link will be here
 Usage info was removed from this ReadMe and will be soon uploaded in separate file
 
 
+**Summary of directories info**
+```
+Repository/
+    attributes/             folder with region and localisation files
+        area.txt
+        region.txt
+        superregion.txt
+        localisation.yml
+    data/
+        any/                folder with prov. hist. files. Use its name when loading files
+        sheet.csv           spreadsheets in csv format
+    script.py               executable file
+```
+
 
 [repo_link]: https://github.com/Jakub21/EU4-Province-Editor/
 [changelog_link]: https://github.com/Jakub21/EU4-Province-Editor/blob/master/Changelog.md
