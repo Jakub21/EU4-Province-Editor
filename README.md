@@ -31,14 +31,6 @@ Usage link will be here
 Usage info was removed from this ReadMe and will be soon uploaded in separate file
 
 
-## Ideas and Todos
-- Allow reversed sorting of numeral columns
-- Pandas' warning messages (`sort` and `inprov`)
-- Selective print of data
-- Function `drop` that removes rows
-
-
 
 [repo_link]: https://github.com/Jakub21/EU4-Province-Editor/
 [changelog_link]: https://github.com/Jakub21/EU4-Province-Editor/blob/master/Changelog.md
-[usage_link]: https://github.com/Jakub21/EU4-Province-Editor/blob/master/Usage.md

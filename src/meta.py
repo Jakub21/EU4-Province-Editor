@@ -46,6 +46,7 @@ def get_const():
         'default_area'          : 'NoArea',
         'default_region'        : 'NoRegion',
         'default_segion'        : 'NoSegion',
+        'value_empty'           : ['nan', 'no', '0', 'none'], # lowercase
         # DataFrames / SpreadSheets
         'index_column'          : 'id',
         'auto_sort_by'          : ['segion', 'region', 'area', 'tax'],
@@ -59,7 +60,7 @@ def get_const():
             'trade_goods',
             'city', 'cost', 'fort',
             'discovered', 'modifiers',
-            'filename',
+            'filename', 'group',
         ],
         # User's functions
         'legal_nonexit_calls'   : [
@@ -88,7 +89,6 @@ def get_const():
         },
         # Province Files
         'indent'                : ' '*4,
-        'skip_save_atvalue'     : ['nan', 'no', '0', 'none'], # lowercase
         'historyfile_keys'      : {
             'capital'       : 'capital',
             'cores'         : 'add_core',
@@ -110,6 +110,15 @@ def get_const():
             'fort'          : 'fort_15th',
             'discovered'    : 'discovered_by',
             'modifiers'     : ['add_permanent_province_modifier', 'name'],
+        },
+        'province_attr_keys'    : {
+            'id'            : 'id',
+            'nm'            : 'name',
+            'fn'            : 'filename',
+            'gr'            : 'group',
+            'ar'            : 'area',
+            'rg'            : 'region',
+            'sg'            : 'segion',
         },
         'additional_save_info'  : {
             # Lines added to every scope with specified name
@@ -135,33 +144,33 @@ def get_const():
 ################################
 # ERRORS HANDLING
 ################################
-def raise_error(error_type, fatal=False, data=['None'], self_contents = False):
+def err_msg(error_type, fatal=False, data=['None'], self_contents=False):
     if type(data) != list:
         data = [data]
     try:
         directory = const['dir_sep'].join(data[0].split(const['dir_sep'])[-3:])
     except:
         pass
-    print(const['error_prefix'], end = "")
+    print(const['error_prefix'], end = '')
     messages = {
-        'illegal_call'          : 'Unrecognized function "'+data[0]+'"',
-        'unknown_subcall'       : 'Unrecognized parameter "'+data[0]+'"',
-        'too_many_arguments'    : 'Function recieved too many arguments',
-        'too_less_arguments'    : 'Function recieved not enough arguments. Usage: '+' '.join(data),
-        'data_not_loaded'       : 'No data was loaded',
-        'data_not_selected'     : 'No data was selected',
-        'unknown_attribute'     : 'Unrecognized column name "'+data[0]+'"',
-        'filestream_error'      : 'File "'+ directory +'" does not exist or the permission was denied',
-        'no_directory_error'    : 'Selected directory does not exist.',
-        'nolocalisation_error'  : 'Localisation could not be loaded. Check files and language tags',
-        'attrfile_error'        : 'Required Attribute file ('+directory+') was not found or permission was denied. Check Usage.md or type "help" for list of Attribute files',
-        'hparser_equal_sign'    : 'Syntax error in file ' + directory,
-        'empty_reg_file'        : 'File with regioning data is empty or contains syntax error',
+        'IllegalCall'           : 'Unrecognized function "'+data[0]+'"',
+        'UnknownSubcall'        : 'Unrecognized parameter "'+data[0]+'"',
+        'TooLessArguments'      : 'Function recieved not enough arguments. Usage: '+' '.join(data),
+        'InvalidArgumentType'   : 'Recieved argument of invalid type.',
+        'DataNotLoaded'         : 'No data was loaded',
+        'DataNotSelected'       : 'No data was selected',
+        'UnknownColumn'         : 'Unrecognized column name "'+data[0]+'"',
+        'FileNotFound'          : 'File "'+ directory +'" does not exist or the permission was denied',
+        'DirectoryNotFound'     : 'Selected directory does not exist.',
+        'LocalisationNotFound'  : 'Localisation could not be loaded. Check files and language tags',
+        'AttrFileNotFound'      : 'Required Attribute file ('+directory+') was not found or permission was denied.',
+        'WrongHistorySyntax'    : 'Syntax error in file ' + directory,
+        'WrongRegionFile'       : 'File with regioning data is empty or contains syntax error',
     }
     if self_contents:
         print(error_type)
     else:
         print(messages[error_type])
     if fatal:
-        print("Program Terminated")
+        print('Program Terminated')
         exit(1)

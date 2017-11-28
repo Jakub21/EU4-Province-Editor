@@ -1,4 +1,4 @@
-from src.meta import raise_error
+from src.meta import err_msg
 from pandas import DataFrame, isnull
 from os import listdir
 import yaml
@@ -38,7 +38,7 @@ def getfile(fpath):
         enc = const['histload_secn_enc']
         text = open(fpath, encoding=enc).read()
     except FileNotFoundError:
-        raise_error('filestream_error', data=fdir)
+        err_msg('FileNotFound', data=fdir)
         return
     text = rem_cmnt(text)
     return text
@@ -135,8 +135,8 @@ def get_regioning(attrdir, filepaths):
         members = []
         result = {}
         for word in text.split():
-            depth += word.count("{")
-            depth -= word.count("}")
+            depth += word.count('{')
+            depth -= word.count('}')
             if word in const['skip_at_region_load']:
                 continue
             if depth == par_depth:
@@ -168,7 +168,7 @@ def get_regioning(attrdir, filepaths):
     regions = regfile_analysis(getfile(attrdir + filepaths['region']), 2)
     areas   = regfile_analysis(getfile(attrdir + filepaths['area']),   1)
     if (type(segions)=={}) or (type(regions)=={}) or (type(areas)=={}):
-        raise_error('empty_reg_file')
+        err_msg('WrongRegionFile')
         return
     ################
     result = {}
@@ -199,7 +199,7 @@ def get_locl(filepath):
         with open(filepath, 'r', encoding=const['locl_enc']) as f:
             content = f.read()
     except (FileNotFoundError, PermissionError):
-        raise_error('attrfile_error', data=filepath)
+        err_msg('AttrFileNotFound', data=filepath)
         return
     ################
     newcontent = ''
@@ -214,7 +214,7 @@ def get_locl(filepath):
     try:
         full_locl = yaml.load(content)
     except yaml.YAMLError as e:
-        raise_error('YAMLError: '+str(e), self_contents=True)
+        err_msg('YAMLError: '+str(e), self_contents=True)
         return
     for lang in const['lcl_languages']:
         try:
@@ -255,41 +255,44 @@ def load(histdir, attrdir):
     regioning = get_regioning(attrdir, const['fnames'])
     localisation = get_locl(attrdir+const['fnames']['provloc'])
     if localisation == None:
-        raise_error('nolocalisation_error')
+        err_msg('LocalisationNotFound')
         return DataFrame
     ################
+    provkeys = const['province_attr_keys']
     rows = []
+    ################
     try:
         filelist = listdir(histdir)
     except FileNotFoundError:
-        raise_error('no_directory_error')
+        err_msg('DirectoryNotFound')
         return DataFrame
     for filename in filelist:
         filedir = histdir + filename
         data = getscope(getfile(filedir).split())
         if type(data) == int:
-            raise_error('hparser_equal_sign', data=filedir)
+            err_msg('WrongHistorySyntax', data=filedir)
             return DataFrame
         ################
         province = {}
         provid = getid(filename)
         if provid == '':
             continue
-        province['id']          = int(provid)
-        province['filename']    = filename
+        province[provkeys['id']] = int(provid)
+        province[provkeys['fn']] = filename
+        province[provkeys['gr']] = ''
         ################################
         try:
-            province['name']        = localisation[const['locl_key_prefix']+provid]
-        except KeyError: province['name'] = const['default_name']
+            province[provkeys['nm']] = localisation[const['locl_key_prefix']+provid]
+        except KeyError: province[provkeys['nm']] = const['default_name']
         try:
-            province['area']        = regioning[provid][0]
-        except KeyError: province['area'] = const['default_area']
+            province[provkeys['ar']] = regioning[provid][0]
+        except KeyError: province[provkeys['ar']] = const['default_area']
         try:
-            province['region']      = regioning[provid][1]
-        except KeyError: province['region'] = const['default_region']
+            province[provkeys['rg']] = regioning[provid][1]
+        except KeyError: province[provkeys['rg']] = const['default_region']
         try:
-            province['segion']      = regioning[provid][2]
-        except KeyError: province['segion'] = const['default_segion']
+            province[provkeys['sg']] = regioning[provid][2]
+        except KeyError: province[provkeys['sg']] = const['default_segion']
         ################################
         for datakey in const['historyfile_keys']:
             provkey = const['historyfile_keys'][datakey]
@@ -334,7 +337,7 @@ def save(data, histdir):
     try:
         idlist = data.index.values
     except AttributeError:
-        raise_error('data_not_loaded')
+        err_msg('DataNotLoaded')
         return
     data = data.values.tolist()
     columns = const['column_order']
@@ -373,7 +376,7 @@ def save(data, histdir):
                 value = [value]
             ################
             for element in value:
-                if (element.lower() in const['skip_save_atvalue']) or (element == ''):
+                if (element.lower() in const['value_empty']) or (element == ''):
                     continue
                 text += _saveline(key, element, len(key)-1, 0)
         filedir = histdir + filename

@@ -1,7 +1,20 @@
 # Changelog
 
-### 15: Game-files loader fix
+### 16: Errors handling
 **Last on Master branch**
+- It is now possible to check basic info about data with `print info` (will be developed later)
+- When selecting provinces, if a column that does not exist was used, an error is raised
+- Program no longer crashes when argument `id` of function `inprov` is not a number.
+- When trying to change value in column that does not exist an error is raised
+- It is now possible to select all provinces with `select all` command
+- When trying to sort by column that does not exist an error is raised
+- Function `raise_error` was renamed to `err_msg`
+- Selective print of rows was added
+- Changed IDs of errors
+
+
+
+### 15: Game-files loader fix
 - Fixed typos in changelog
 - Fixed game files load procedure
 - Fixed encoding problems

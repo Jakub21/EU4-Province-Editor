@@ -30,7 +30,7 @@ Repository/
 
 ################################
 import src.gamefiles as gamefiles
-from src.meta import raise_error, get_const
+from src.meta import err_msg, get_const
 import pandas as pd
 from os import system, makedirs, path
 
@@ -50,7 +50,7 @@ def _load(filetype, location):
                 data = pd.read_csv(location, encoding = encoding)
                 data.set_index(const['index_column'], inplace=True)
             except (FileNotFoundError, PermissionError):
-                raise_error('filestream_error', data=location)
+                err_msg('FileNotFound', data=location)
                 return
             except UnicodeDecodeError:
                 pass
@@ -60,7 +60,7 @@ def _load(filetype, location):
             print('ScriptLoad:', 'GameLoader returned empty DF')
             return
     else:
-        raise_error('unknown_subcall')
+        err_msg('UnknownSubcall')
         return
     data.sort_values(const['auto_sort_by'], inplace=True)
     return data
@@ -86,7 +86,10 @@ def _save(filetype, location):
 
 ################################
 def _apply():
-    alldata.update(selection)
+    try:
+        alldata.update(selection)
+    except AttributeError:
+        err_msg('DataNotLoaded')
 
 
 ################################
@@ -99,100 +102,154 @@ def _operate_on():
 def _select(_from, attribute, values):
     global selection
     _apply()
+    if attribute == 'all':
+        selection = alldata
+        return
+    if attribute not in const['column_order']:
+        err_msg('UnknownColumn', data=attribute)
+        return
     try:
         if _from == 'all':
             selection = alldata.loc[alldata[attribute].isin(values)]
         if _from == 'selection':
             selection = selection.loc[selection[attribute].isin(values)]
     except (AttributeError, TypeError):
-        raise_error('data_not_loaded')
-        return
+        return # Message is displayed by _apply()
     except KeyError:
-        raise_error('unknown_attribute', data=attribute)
+        err_msg('UnknownColumn', data=attribute)
         return
 
 
 ################################
 def _append(attribute, values):
     global selection
+    if attribute not in const['column_order']:
+        err_msg('UnknownColumn', data=attribute)
+        return
     try:
         new_selection = alldata.loc[alldata[attribute].isin(values)]
         selection = pd.concat([selection, new_selection])
     except (AttributeError, TypeError):
-        raise_error('data_not_loaded')
+        err_msg('DataNotLoaded')
         return
     except KeyError:
-        raise_error('unknown_attribute', data=attribute)
+        err_msg('UnknownColumn', data=attribute)
         return
 
 
 ################################
 def _sort(scope_name, sort_by):
+    for c in sort_by:
+        if c not in const['column_order']:
+            err_msg('UnknownColumn', data=c)
+            return
     if scope_name == 'all':
         try:
             alldata.sort_values(sort_by, inplace=True)
         except AttributeError:
-            raise_error('data_not_loaded')
+            err_msg('DataNotLoaded')
             return
     elif scope_name == 'selection':
         try:
             selection.sort_values(sort_by, inplace=True)
         except AttributeError:
-            raise_error('data_not_selected', False)
+            err_msg('DataNotSelected', False)
             return
     else:
-        raise_error('unknown_subcall', data=scope_name)
+        err_msg('UnknownSubcall', data=scope_name)
         return
 
 
 ################################
 def _set(attribute, value):
     # TODO: Pandas warning message may be displayed (Not tested)
+    if attribute not in const['column_order']:
+        err_msg('UnknownColumn', data=attribute)
+        return
     for i in range(value.count(None)):
         value.remove(None)
     value = ' '.join(value)
     try:
         selection.loc[:, attribute] = value
     except AttributeError:
-        raise_error('data_not_selected')
+        err_msg('DataNotSelected')
         return
 
 
 ################################
 def _inprov(provid, attribute, value):
     # TODO: Pandas warning message may be displayed (Not tested)
+    try:
+        provid = int(provid)
+    except ValueError:
+        err_msg('InvalidArgumentType')
+        return
+    if attribute not in const['column_order']:
+        err_msg('UnknownColumn', data=attribute)
+        return
     for i in range(value.count(None)):
         value.remove(None)
     value = ' '.join(value)
     try:
         selection.loc[provid, attribute] = value
     except AttributeError:
-        raise_error('data_not_selected')
+        err_msg('DataNotSelected')
         return
 
 
 ################################
-def _print(scope_name='selection', mode='full', attribute='', values=[]):
+def _print(dtype='selection', mode='full', attribute='', values=[]):
     # TODO: Test function to find possible errors
-    # TODO: Selective print of rows
     drop_list = const['drop_from_print']
-    print_selection = None
-    if scope_name == 'all':
+    psel = None
+    ################ Drop columns listed in const['drop_from_print']
+    if dtype == 'all':
         try:
-            print_selection = alldata.drop(drop_list, axis=1)
+            psel = alldata.drop(drop_list, axis=1)
         except AttributeError:
-            raise_error('data_not_loaded')
+            err_msg('DataNotLoaded')
             return
-    elif scope_name == 'selection':
+    elif dtype == 'selection':
         try:
-            print_selection = selection.drop(drop_list, axis=1)
+            psel = selection.drop(drop_list, axis=1)
         except AttributeError:
-            raise_error('data_not_selected')
+            err_msg('DataNotSelected')
             return
-    else:
-        raise_error('unknown_subcall')
+    elif dtype == 'info':
+        try:
+            c = [x for x in const['column_order'] if x not in const['drop_from_print']]
+            h = const['drop_from_print']
+            print('\nColumns:\n' + ', '.join(c))
+            print('\nHidden columns:\n'+ ', '.join(h))
+            print('\nTotal provinces:\t', len(alldata.index))
+            print('Selected provinces:\t', len(selection.index))
+        except:
+            pass
+        print()
         return
-    print(print_selection)
+    else:
+        err_msg('UnknownSubcall', dtype)
+        return
+    ################ Selecting rows
+    if mode == 'full':
+        pass
+    elif mode == 'where':
+        if (attribute == '') or (values == []):
+            err_msg('TooLessArguments')
+            return
+        try:
+            psel = psel.loc[psel[attribute].isin(values)]
+        except (AttributeError, TypeError):
+            if dtype == 'all':
+                err_msg('DataNotLoaded')
+                return
+            elif dtype == 'selection':
+                err_msg('DataNotSelected')
+                return
+    else:
+        err_msg('UnknownSubcall', mode)
+    ################ Print
+    print(psel)
 
 
 ################################
@@ -235,13 +292,13 @@ def loop():
         return True
     funcname = cmnd[0]
     try:
-        args = cmnd[1:]# + [None, ]*(4-len(cmnd))
+        args = cmnd[1:]
     except IndexError:
         pass
     if funcname in const['legal_exit_calls']:
         return False
     if funcname not in const['legal_nonexit_calls']:
-        raise_error('illegal_call', data=funcname)
+        err_msg('IllegalCall', data=funcname)
     ################################
     try:
         if funcname == 'load':
@@ -263,7 +320,7 @@ def loop():
         if funcname == 'set':
             _set(args[0], args[1:])
         if funcname == 'inprov':
-            _inprov(int(args[0]), args[1], args[2:])
+            _inprov(args[0], args[1], args[2:])
         if funcname == 'clear':
             _clear()
         if funcname == 'help':
@@ -278,7 +335,7 @@ def loop():
                     _print()
 
     except IndexError:
-        raise_error('too_less_arguments')
+        err_msg('TooLessArguments')
         raise # TODO
     return True
 
@@ -291,12 +348,12 @@ def main():
 
 
 ################################
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n"+ "-"*32 + "\nProgram manually terminated\n"+ "-"*32+"\n\n")
+        print('\n\n'+ '-'*32 + '\nProgram manually terminated\n'+ '-'*32+'\n\n')
     except Exception as e: #Any Unhandled Error
-        print("\n"+ "-"*32 + "\nUnhandled error occured: "
-        + str(type(e).__name__) + "\n" + "-"*32+"\n\n")
+        print('\n'+ '-'*32 + '\nUnhandled error occured: '
+        + str(type(e).__name__) + '\n' + '-'*32+'\n\n')
         raise
