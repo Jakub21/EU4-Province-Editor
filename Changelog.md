@@ -1,17 +1,27 @@
 # Changelog
 
-### 17: Hidden warnings
+### 18: Modifiers loading
 **Last on Master branch**
+- Added `XXX` (No country) to list of emptiness markers
+- Default value of `pandas_max_rows` setting changed from 500 to 1000
+- Repaired program crashes that occurred when `save` received not enough arguments
+- Province modifiers are now loaded correctly
+- When loading from sheet, `NaN` is no longer displayed in empty cells
+- When setting value to an `empty_marker`, there will be nothing displayed in the cell
+- Data can be shown on screen after changes. Disabled by default.
+- Added tool that copies modifiers info from one data set to other
+
+
+
+### 17: Hidden warnings
 - Pandas warnings are now hidden (warnings can be re-enabled in `meta.py`)
 - Another update of encodings. Probably a final one (tested in-game)
 - Basic directories info moved from `script.py` to a readme file
 
-- **In previous commit**  
-A new column `group` was added. Column is empty when data is generated. User can assign any value here. This allows to "save" lists of provinces so they can be re-selected later. Groups data is saved to sheets but not to game files.
-
 
 
 ### 16: Errors handling
+- A new column `group` was added. Column is empty when data is generated. User can assign any value here. This allows to "save" lists of provinces so they can be re-selected later. Groups data is saved to sheets but not to game files.
 - It is now possible to check basic info about data with `print info` (will be developed later)
 - When selecting provinces, if a column that does not exist was used, an error is raised
 - Program no longer crashes when argument `id` of function `inprov` is not a number.

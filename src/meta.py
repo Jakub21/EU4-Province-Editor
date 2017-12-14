@@ -5,8 +5,14 @@ from os import getcwd
 def get_const():
     global const
     const = {
+        # General
+        'auto_sort'             : True,
+        'auto_apply'            : True,
+        'autoprint_atselect'    : False,
+        'autoprint_atsort'      : False,
+        'autoprint_atchange'    : False,
         # Pandas Display
-        'pandas_max_rows'       : 500,
+        'pandas_max_rows'       : 1000,
         'pandas_max_cols'       : 50,
         'pandas_disp_width'     : 250,
         'pandas_hide_warnings'  : True,
@@ -31,6 +37,7 @@ def get_const():
         'preceding_blank_line'  : False,
         'show_save_toggle'      : True,
         'show_save_freq'        : 350,              # Message every _ provinces saved
+        'empty_marker'          : '',
         'show_save_msg'         : 'Progress: ',
         'error_prefix'          : '(Error) ',
         'input_prefix'          : '[Editor] > ',
@@ -38,7 +45,7 @@ def get_const():
         'drop_from_print'       : [
             'filename',
             'discovered',
-            'modifiers',
+            #'modifiers',
         ],
         # Value Related
         'shorten_region_names'  : True,
@@ -47,7 +54,7 @@ def get_const():
         'default_area'          : 'NoArea',
         'default_region'        : 'NoRegion',
         'default_segion'        : 'NoSegion',
-        'value_empty'           : ['nan', 'no', '0', 'none'], # lowercase
+        'value_empty'           : ['xxx', 'nan', 'no', '0', 'none'], # lowercase
         # DataFrames / SpreadSheets
         'index_column'          : 'id',
         'auto_sort_by'          : ['segion', 'region', 'area', 'tax'],
@@ -156,8 +163,8 @@ def err_msg(error_type, fatal=False, data=['None'], self_contents=False):
     messages = {
         'IllegalCall'           : 'Unrecognized function "'+data[0]+'"',
         'UnknownSubcall'        : 'Unrecognized parameter "'+data[0]+'"',
-        'TooLessArguments'      : 'Function recieved not enough arguments. Usage: '+' '.join(data),
-        'InvalidArgumentType'   : 'Recieved argument of invalid type.',
+        'TooLessArguments'      : 'Function received not enough arguments',
+        'InvalidArgumentType'   : 'Received argument of invalid type.',
         'DataNotLoaded'         : 'No data was loaded',
         'DataNotSelected'       : 'No data was selected',
         'UnknownColumn'         : 'Unrecognized column name "'+data[0]+'"',

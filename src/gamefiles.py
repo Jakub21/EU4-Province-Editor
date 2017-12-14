@@ -72,6 +72,7 @@ def getscope(data, rcr_depth=0):
     ################
     for word in data:
         last = False
+        fromsub = False
         ################
         if word == obr:
             depth += 1
@@ -114,13 +115,14 @@ def getscope(data, rcr_depth=0):
                 index = (index+1)%3
                 subscope = subscope[ssc_cuthead:]
                 value = getscope(subscope, rcr_depth+1)
-                continue
+                fromsub = True
             try:
                 result[key].append(value)
             except KeyError:
                 result[key] = [value]
         ################
-        index = (index+1)%3
+        if not fromsub:
+            index = (index+1)%3
         total_index += 1
     return result
 

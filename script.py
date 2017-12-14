@@ -22,6 +22,7 @@ import src.gamefiles as gamefiles
 from src.meta import err_msg, get_const
 from warnings import filterwarnings
 import pandas as pd
+from numpy import nan
 from os import system, makedirs, path
 
 
@@ -37,8 +38,9 @@ def _load(filetype, location):
     if filetype == 'sheet':
         for encoding in encodings:
             try:
-                data = pd.read_csv(location, encoding = encoding)
+                data = pd.read_csv(location, encoding=encoding)
                 data.set_index(const['index_column'], inplace=True)
+                data.replace(nan, const['empty_marker'], inplace=True)
             except (FileNotFoundError, PermissionError):
                 err_msg('FileNotFound', data=location)
                 return
@@ -52,7 +54,8 @@ def _load(filetype, location):
     else:
         err_msg('UnknownSubcall')
         return
-    data.sort_values(const['auto_sort_by'], inplace=True)
+    if const['auto_sort']:
+        data.sort_values(const['auto_sort_by'], inplace=True)
     return data
 
 
@@ -91,13 +94,19 @@ def _operate_on():
 ################################
 def _select(_from, attribute, values):
     global selection
-    _apply()
+    if const['auto_apply']:
+        _apply()
     if attribute == 'all':
         selection = alldata
+        if const['autoprint_atselect']:
+            _print()
         return
     if attribute not in const['column_order']:
         err_msg('UnknownColumn', data=attribute)
         return
+    if len(values) == 1:
+        if values[0] in const['value_empty']:
+            values = [const['empty_marker']]
     try:
         if _from == 'all':
             selection = alldata.loc[alldata[attribute].isin(values)]
@@ -108,6 +117,8 @@ def _select(_from, attribute, values):
     except KeyError:
         err_msg('UnknownColumn', data=attribute)
         return
+    if const['autoprint_atselect']:
+        _print()
 
 
 ################################
@@ -116,6 +127,9 @@ def _append(attribute, values):
     if attribute not in const['column_order']:
         err_msg('UnknownColumn', data=attribute)
         return
+    if len(values) == 1:
+        if values[0] in const['value_empty']:
+            values = [const['empty_marker']]
     try:
         new_selection = alldata.loc[alldata[attribute].isin(values)]
         selection = pd.concat([selection, new_selection])
@@ -125,6 +139,8 @@ def _append(attribute, values):
     except KeyError:
         err_msg('UnknownColumn', data=attribute)
         return
+    if const['autoprint_atselect']:
+        _print()
 
 
 ################################
@@ -136,12 +152,16 @@ def _sort(scope_name, sort_by):
     if scope_name == 'all':
         try:
             alldata.sort_values(sort_by, inplace=True)
+            if const['autoprint_atsort']:
+                _print(dtype='full')
         except AttributeError:
             err_msg('DataNotLoaded')
             return
     elif scope_name == 'selection':
         try:
             selection.sort_values(sort_by, inplace=True)
+            if const['autoprint_atsort']:
+                _print()
         except AttributeError:
             err_msg('DataNotSelected', False)
             return
@@ -152,15 +172,16 @@ def _sort(scope_name, sort_by):
 
 ################################
 def _set(attribute, value):
-    # TODO: Pandas warning message may be displayed (Not tested)
+    value = ' '.join(value)
     if attribute not in const['column_order']:
         err_msg('UnknownColumn', data=attribute)
         return
-    for i in range(value.count(None)):
-        value.remove(None)
-    value = ' '.join(value)
+    if value.lower() in const['value_empty']:
+        value = const['empty_marker']
     try:
         selection.loc[:, attribute] = value
+        if const['autoprint_atchange']:
+            _print()
     except AttributeError:
         err_msg('DataNotSelected')
         return
@@ -168,7 +189,7 @@ def _set(attribute, value):
 
 ################################
 def _inprov(provid, attribute, value):
-    # TODO: Pandas warning message may be displayed (Not tested)
+    value = ' '.join(value)
     try:
         provid = int(provid)
     except ValueError:
@@ -177,11 +198,12 @@ def _inprov(provid, attribute, value):
     if attribute not in const['column_order']:
         err_msg('UnknownColumn', data=attribute)
         return
-    for i in range(value.count(None)):
-        value.remove(None)
-    value = ' '.join(value)
+    if value.lower() in const['value_empty']:
+        value = const['empty_marker']
     try:
         selection.loc[provid, attribute] = value
+        if const['autoprint_atchange']:
+            _print()
     except AttributeError:
         err_msg('DataNotSelected')
         return
@@ -189,7 +211,6 @@ def _inprov(provid, attribute, value):
 
 ################################
 def _print(dtype='selection', mode='full', attribute='', values=[]):
-    # TODO: Test function to find possible errors
     drop_list = const['drop_from_print']
     psel = None
     ################ Drop columns listed in const['drop_from_print']
@@ -277,7 +298,6 @@ def init():
 
 ################################
 def loop():
-    # TODO: IndexError in this function is temporarily considered fatal
     global alldata
     cmnd = input(const['input_prefix']).split()
     if len(cmnd) == 0:
@@ -328,7 +348,6 @@ def loop():
 
     except IndexError:
         err_msg('TooLessArguments')
-        raise # TODO
     return True
 
 
@@ -346,6 +365,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('\n\n'+ '-'*32 + '\nProgram manually terminated\n'+ '-'*32+'\n\n')
     except Exception as e: #Any Unhandled Error
-        print('\n'+ '-'*32 + '\nUnhandled error occured: '
+        print('\n'+ '-'*32 + '\nUnhandled error occurred: '
         + str(type(e).__name__) + '\n' + '-'*32+'\n\n')
         raise
